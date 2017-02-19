@@ -29,6 +29,23 @@ int Kernel::GetTotalElements()
 	return kernelSize*kernelSize;
 }
 
+int Kernel::GetRadius()
+{
+	return kernelSize/2;
+}
+
+int Kernel::GetElementAt(int x, int y)
+{
+	return values[y*kernelSize + x];
+}
+
+unique_ptr<Kernel> Kernel::operator*(double factor)
+{
+	auto multipliedValues = new double[kernelSize*kernelSize];
+	transform(values.get(), values.get() + kernelSize*kernelSize, multipliedValues, [factor](double x)->double { return x * factor; });
+	return unique_ptr<Kernel>(new Kernel(this->kernelSize, multipliedValues));
+}
+
 unique_ptr<Kernel> Kernel::CalculateSquare() const
 {	
 	auto squareValues = new double[kernelSize*kernelSize];

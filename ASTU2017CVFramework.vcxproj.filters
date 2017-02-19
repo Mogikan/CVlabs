@@ -71,6 +71,9 @@
     <ClCompile Include="Kernel.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="NormalizedImage.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.h">
@@ -104,6 +107,9 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="Kernel.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NormalizedImage.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

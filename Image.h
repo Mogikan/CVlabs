@@ -2,6 +2,7 @@
 
 #include <stdlib.h>
 #include <memory>
+#include <algorithm>
 typedef unsigned char uchar;
 using namespace std;
 class Image
@@ -12,9 +13,12 @@ public:
 	int GetWidth() const;
 	int GetHeight() const;
 	int GetBytesPerPixel() const;
-	int GetTotalBytes() const;
+	int GetTotalBytes() const;	
+	unique_ptr<double[]> GetNormilizedDoubleData();
 	uchar* GetRawData();
+	void NormalizeImage();
 private:
+	
 	unique_ptr<uchar[]> imageBytes;
 	int width;
 	int height;

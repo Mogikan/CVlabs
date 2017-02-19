@@ -146,6 +146,7 @@
     </ClCompile>
     <ClCompile Include="ImageFramework.cpp" />
     <ClCompile Include="Kernel.cpp" />
+    <ClCompile Include="NormalizedImage.cpp" />
     <ClCompile Include="PlatformImageUtils.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainwindow.cpp" />
@@ -155,6 +156,7 @@
     <ClInclude Include="GeneratedFiles\ui_mainwindow.h" />
     <ClInclude Include="ImageFramework.h" />
     <ClInclude Include="Kernel.h" />
+    <ClInclude Include="NormalizedImage.h" />
     <ClInclude Include="PlatformImageUtils.h" />
     <ClInclude Include="Image.h" />
     <CustomBuild Include="mainwindow.h">
