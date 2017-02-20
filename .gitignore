@@ -51,3 +51,5 @@ Makefile*
 # QtCtreator CMake
 CMakeLists.txt.user
 
+*.db
+*.opendb
