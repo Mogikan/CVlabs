@@ -9,6 +9,7 @@ class Image
 {
 public:
 	Image(uchar* rgbImageBytes,int width,int height,int bytesPerPixel);
+	Image(const unique_ptr<double[]>& normalizedPixels, int width, int height);
 	~Image();
 	int GetWidth() const;
 	int GetHeight() const;

@@ -4,14 +4,21 @@
 
 
 
-Kernel::Kernel(int kernelSize, double * values)
+Kernel::Kernel(int kernelSize, unique_ptr<double[]> values)
 {
 	this->kernelSize = kernelSize;
-	this->values = unique_ptr<double[]>(values);
+	this->values = move(values);
 }
 
 Kernel::~Kernel()
 {
+}
+
+unique_ptr < double[] > FillValues(double kernelValues[],int size) 
+{
+	unique_ptr<double[]> values = make_unique<double[]>(size);
+	copy(kernelValues, kernelValues + size, values.get());
+	return move(values);
 }
 
 unique_ptr<Kernel> Kernel::GetSobelYKernel()
@@ -21,7 +28,7 @@ unique_ptr<Kernel> Kernel::GetSobelYKernel()
 		0,0,0,
 		-1,-2,-1
 	};
-	return unique_ptr<Kernel>(new Kernel(3, sobelYKernelValues));
+	return unique_ptr<Kernel>(new Kernel(3, FillValues(sobelYKernelValues,3)));
 }
 
 int Kernel::GetTotalElements()
@@ -43,28 +50,28 @@ unique_ptr<Kernel> Kernel::operator*(double factor)
 {
 	auto multipliedValues = new double[kernelSize*kernelSize];
 	transform(values.get(), values.get() + kernelSize*kernelSize, multipliedValues, [factor](double x)->double { return x * factor; });
-	return unique_ptr<Kernel>(new Kernel(this->kernelSize, multipliedValues));
+	return unique_ptr<Kernel>(new Kernel(this->kernelSize, unique_ptr<double[]>(multipliedValues)));
 }
 
 unique_ptr<Kernel> Kernel::CalculateSquare() const
 {	
 	auto squareValues = new double[kernelSize*kernelSize];
 	transform(values.get(), values.get() +  kernelSize*kernelSize, squareValues, [](double x)->double { return x * x; });
-	return unique_ptr<Kernel>(new Kernel(this->kernelSize, squareValues));
+	return unique_ptr<Kernel>(new Kernel(this->kernelSize, unique_ptr<double[]>(squareValues)));
 }
 
 unique_ptr<Kernel> Kernel::CalculateSquareRoot() const
 {
 	auto squareValues = new double[kernelSize*kernelSize];
 	transform(values.get(), values.get() + kernelSize*kernelSize, squareValues, [](double x)->double { return sqrt(x); });
-	return unique_ptr<Kernel>(new Kernel(this->kernelSize, squareValues));
+	return unique_ptr<Kernel>(new Kernel(this->kernelSize, unique_ptr<double[]>(squareValues)));
 }
 
 unique_ptr<Kernel> Kernel::operator+(unique_ptr<Kernel> secondKernel)
 {
 	auto sumValues = new double[kernelSize*kernelSize];
 	transform(values.get(), values.get() + kernelSize * kernelSize, secondKernel->values.get(),sumValues, std::plus<double>());
-	return unique_ptr<Kernel>(new Kernel(this->kernelSize, sumValues));
+	return unique_ptr<Kernel>(new Kernel(this->kernelSize, unique_ptr<double[]>(sumValues)));
 }
 
 
@@ -76,5 +83,6 @@ unique_ptr<Kernel> Kernel::GetSobelXKernel()
 		-2,0,2,
 		-1,0,1
 	};
-	return unique_ptr<Kernel>(new Kernel(3, sobelXKernelValues));
+	
+	return unique_ptr<Kernel>(new Kernel(3, FillValues(sobelXKernelValues,3)));
 }

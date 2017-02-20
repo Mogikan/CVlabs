@@ -1,7 +1,5 @@
 #include "ImageFramework.h"
 
-
-
 ImageFramework::ImageFramework()
 {
 }
@@ -11,7 +9,7 @@ ImageFramework::~ImageFramework()
 {
 }
 
-double GetIntensity(const unique_ptr<NormalizedImage>& image,int x, int y, ConvolutionBorderHandlingMode borderHandlingMode)
+static double GetIntensity(const unique_ptr<Matrix2D>& image, int x, int y, ConvolutionBorderHandlingMode borderHandlingMode)
 {
 	int effectiveX = x;
 	int effectiveY = y;
@@ -32,7 +30,7 @@ double GetIntensity(const unique_ptr<NormalizedImage>& image,int x, int y, Convo
 			break;
 		case ConvolutionBorderHandlingMode::wrap:
 			effectiveX = width + x;
-			break;		
+			break;
 		}
 	}
 	if (y < 0)
@@ -64,7 +62,7 @@ double GetIntensity(const unique_ptr<NormalizedImage>& image,int x, int y, Convo
 			effectiveX = width - 1;
 			break;
 		case ConvolutionBorderHandlingMode::mirror:
-			effectiveX = width -1 - (x - width);
+			effectiveX = width - 1 - (x - width);
 			break;
 		case ConvolutionBorderHandlingMode::wrap:
 			effectiveX = x - width;
@@ -79,37 +77,41 @@ double GetIntensity(const unique_ptr<NormalizedImage>& image,int x, int y, Convo
 			return 0;
 			break;
 		case ConvolutionBorderHandlingMode::extend:
-			effectiveX = height - 1;
+			effectiveY = height - 1;
 			break;
 		case ConvolutionBorderHandlingMode::mirror:
-			effectiveX = height - 1 - (x - height);
+			effectiveY = height - 1 - (x - height);
 			break;
 		case ConvolutionBorderHandlingMode::wrap:
-			effectiveX = x - height;
+			effectiveY = x - height;
 			break;
 		}
 	}
-	return image->GetElementAt(effectiveX, effectiveY);	
+	return image->GetElementAt(effectiveX, effectiveY);
 }
 
-unique_ptr<Image> ImageFramework::Convolve(unique_ptr<Image> originalImage, unique_ptr<Kernel> kernel,ConvolutionBorderHandlingMode borderHandlingMode)
+
+
+
+unique_ptr<Image> ImageFramework::Convolve(const unique_ptr<Image>& originalImage, const unique_ptr<Kernel>& kernel, ConvolutionBorderHandlingMode borderHandlingMode)
 {
-	auto normalizedDoubleImage = originalImage->GetNormilizedDoubleData();
+	auto normalizedDoubleImage = originalImage->GetNormilizedDoubleData();	
 	int width = originalImage->GetWidth();
 	int height = originalImage->GetHeight();
-	auto normalizedImage = make_unique<NormalizedImage>(new NormalizedImage(move(normalizedDoubleImage), originalImage->GetWidth(), originalImage->GetHeight()));
-	//TODO: create new doubleImage
-	for (int y = 0;y < height ;y++)
-	for (int x = 0; x < width; x++)
-	{
-		double convolutionValue = 0;
-		for (int yk = -kernel->GetRadius();yk<kernel->GetRadius();yk++)
-		for (int xk = -kernel->GetRadius();xk < kernel->GetRadius();xk++)
+	auto originalImageMatrix = unique_ptr<Matrix2D>(new Matrix2D(move(normalizedDoubleImage), width, height));
+	auto convolutedImageMatrix = unique_ptr<Matrix2D>(new Matrix2D(make_unique<double[]>(width*height), width, height));
+	for (int y = 0; y < height; y++)
+		for (int x = 0; x < width; x++)
 		{
-			double imageIntensity = GetIntensity(normalizedImage, x+xk,y+yk,borderHandlingMode);
-			double kernelValue = kernel->GetElementAt(xk + kernel->GetRadius(), yk + kernel->GetRadius());
-			convolutionValue += imageIntensity*kernelValue;
+			double convolutionValue = 0;
+			for (int yk = -kernel->GetRadius(); yk < kernel->GetRadius()+1; yk++)
+				for (int xk = -kernel->GetRadius(); xk < kernel->GetRadius()+1; xk++)
+				{	
+					double imageIntensity = GetIntensity(originalImageMatrix, x - xk, y - yk, borderHandlingMode);
+					double kernelValue = kernel->GetElementAt(xk + kernel->GetRadius(), yk + kernel->GetRadius());
+					convolutionValue += imageIntensity*kernelValue;				
+				}
+			convolutedImageMatrix->SetElementAt(x, y, convolutionValue);
 		}
-	//TODO: set new doubleImage value to convolutionValue 	
-	}	
+	return unique_ptr<Image>(new Image(convolutedImageMatrix->ExtractData(),width, height));
 }

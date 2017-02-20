@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QFileDialog>
+#include "PlatformImageUtils.h"
+#include "ImageFramework.h"
 #include "Image.h"
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -24,12 +26,15 @@ void MainWindow::on_pushButton_clicked()
     if (imagePicker.exec())
     {
         auto fileName = imagePicker.selectedFiles()[0];		
-        scene->addPixmap(QPixmap(fileName));
+        
+		scene->addPixmap(QPixmap(fileName));
 
         ui->graphicsView->setScene(scene);
 		ui->graphicsView->show();
 
-		
+		auto image = PlatformImageUtils::LoadInternalImage(fileName);
+		auto sobelXImage = ImageFramework::Convolve(image,Kernel::GetSobelXKernel(),ConvolutionBorderHandlingMode::extend);
+		PlatformImageUtils::SaveImage(sobelXImage, "C:\\sobel.png");
     }
 }
 

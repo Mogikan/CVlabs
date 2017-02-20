@@ -138,6 +138,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="DebugHelper.cpp" />
     <ClCompile Include="GeneratedFiles\Debug\moc_mainwindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
@@ -146,17 +147,18 @@
     </ClCompile>
     <ClCompile Include="ImageFramework.cpp" />
     <ClCompile Include="Kernel.cpp" />
-    <ClCompile Include="NormalizedImage.cpp" />
+    <ClCompile Include="Matrix2D.cpp" />
     <ClCompile Include="PlatformImageUtils.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainwindow.cpp" />
     <ClCompile Include="Image.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="DebugHelper.h" />
     <ClInclude Include="GeneratedFiles\ui_mainwindow.h" />
     <ClInclude Include="ImageFramework.h" />
     <ClInclude Include="Kernel.h" />
-    <ClInclude Include="NormalizedImage.h" />
+    <ClInclude Include="Matrix2D.h" />
     <ClInclude Include="PlatformImageUtils.h" />
     <ClInclude Include="Image.h" />
     <CustomBuild Include="mainwindow.h">

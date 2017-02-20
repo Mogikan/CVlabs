@@ -2,12 +2,12 @@
 #include <memory>
 #include "Image.h"
 #include "Kernel.h"
-#include "NormalizedImage.h"
+#include "Matrix2D.h"
 enum ConvolutionBorderHandlingMode {wrap, mirror, extend, zero};
 class ImageFramework
 {
 public:
 	ImageFramework();
 	~ImageFramework();
-	unique_ptr<Image> Convolve(unique_ptr<Image> originalImage,unique_ptr<Kernel> kernel,ConvolutionBorderHandlingMode borderHandlingMode);
+	static unique_ptr<Image> Convolve(const unique_ptr<Image>& originalImage,const unique_ptr<Kernel>& kernel,ConvolutionBorderHandlingMode borderHandlingMode);
 };
