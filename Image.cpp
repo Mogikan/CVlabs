@@ -4,7 +4,9 @@
 Image::Image(uchar* rgbImageBytes, int width, int height,int bytesPerPixel)
 {
 	this->imageBytes = make_unique<uchar[]>(width*height);
-
+	this->width = width;
+	this->height = height;
+	this->bytesPerPixel = 1;
 	if (bytesPerPixel == 1)
 	{		
 		copy(rgbImageBytes, rgbImageBytes + width*height, this->imageBytes.get());
@@ -19,11 +21,10 @@ Image::Image(uchar* rgbImageBytes, int width, int height,int bytesPerPixel)
 				0.715 * rgbImageBytes[i * 3 + 1] +
 				0.072 * rgbImageBytes[i * 3 + 2]);
 		}
+		NormalizeImage();
 	}
 	//NormalizeImage();
-	this->width = width;
-	this->height = height;
-	this->bytesPerPixel = 1;
+	
 }
 
 Image::Image(const unique_ptr<double[]>& normalizedPixels, int width, int height)
@@ -66,11 +67,12 @@ int Image::GetTotalBytes() const
 unique_ptr<double[]> Image::GetNormilizedDoubleData()
 {
 	auto normalizedData = make_unique<double[]>(width*height);
+	auto maxElement = *max(imageBytes.get(), imageBytes.get() + GetTotalBytes());
+	auto minElement = *min(imageBytes.get(), imageBytes.get() + GetTotalBytes());
 
-	transform(imageBytes.get(), imageBytes.get() + GetTotalBytes(), normalizedData.get(),[](uchar b)->double 
-	{
-		return b/255.0;
-	});
+	transform(imageBytes.get(), imageBytes.get() + GetTotalBytes(), normalizedData.get(), [minElement, maxElement](uchar b)->double {return ((double)b - minElement) / ((double)maxElement - minElement);});
+
+	
 	return normalizedData;
 }
 
@@ -86,7 +88,7 @@ void Image::NormalizeImage()
 	auto maxElement = *max(imageBytes.get(), imageBytes.get() + GetTotalBytes());
 	auto minElement = *min(imageBytes.get(), imageBytes.get() + GetTotalBytes());
 	
-	transform(imageBytes.get(), imageBytes.get() + GetTotalBytes(), imageBytes.get(), [minElement, maxElement](uchar b)->uchar {return (uchar)((b - minElement) * 255 / (maxElement - minElement));});
+	transform(imageBytes.get(), imageBytes.get() + GetTotalBytes(), imageBytes.get(), [minElement, maxElement](uchar b)->uchar {return (uchar)((b - minElement) * 255.0 / (maxElement - minElement));});
 }
 
 

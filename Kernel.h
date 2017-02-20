@@ -6,7 +6,8 @@ using namespace std;
 class Kernel
 {
 public:
-	Kernel(int dimensionSize, unique_ptr<double[]> values);
+	Kernel(double values[], int dimensionSize);
+	Kernel(unique_ptr<double[]> values, int dimensionSize);
 	~Kernel();
 	static unique_ptr<Kernel> GetSobelXKernel();
 	static unique_ptr<Kernel> GetSobelYKernel();
