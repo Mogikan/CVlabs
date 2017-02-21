@@ -15,6 +15,7 @@ public:
 	int GetHeight() const;
 	int GetBytesPerPixel() const;
 	int GetTotalBytes() const;	
+	unique_ptr<double[]> GetDoubleData();
 	unique_ptr<double[]> GetNormilizedDoubleData();
 	uchar* GetRawData();
 	void NormalizeImage();

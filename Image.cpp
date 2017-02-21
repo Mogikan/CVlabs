@@ -31,9 +31,10 @@ Image::Image(const unique_ptr<double[]>& normalizedPixels, int width, int height
 	auto maxElement = *max_element(normalizedPixels.get(), normalizedPixels.get() + width*height);
 	auto minElement = *min_element(normalizedPixels.get(), normalizedPixels.get() + width*height);
 
-	transform(normalizedPixels.get(), normalizedPixels.get() + width*height, rgbImage.get(), [minElement,maxElement](double img)->uchar 
+	transform(normalizedPixels.get(), normalizedPixels.get() + width*height, rgbImage.get(), 
+		[minElement,maxElement](double img)->uchar 
 	{		
-		return std::min((uchar)255,(uchar)((img-minElement) /(maxElement-minElement) * 255.)); 
+		return (uchar)std::min(255.,((img-minElement) /(maxElement-minElement) * 255.)); 
 	});
 	auto maxElement1 = *max_element(rgbImage.get(), rgbImage.get() + width*height);
 	auto minElement1 = *min_element(rgbImage.get(), rgbImage.get() + width*height);
@@ -69,6 +70,16 @@ int Image::GetTotalBytes() const
 	return width*height*bytesPerPixel;
 }
 
+unique_ptr<double[]> Image::GetDoubleData()
+{
+	auto doubleData = make_unique<double[]>(width*height);
+	transform(imageBytes.get(), imageBytes.get() + GetTotalBytes(), doubleData.get(), [](uchar b)->double
+	{
+		return b;
+	});
+	return doubleData;
+}
+
 unique_ptr<double[]> Image::GetNormilizedDoubleData()
 {
 	auto normalizedData = make_unique<double[]>(width*height);
@@ -87,7 +98,7 @@ unique_ptr<double[]> Image::GetNormilizedDoubleData()
 
 uchar* Image::GetRawData()
 {
-	uchar* result = new uchar[width*height*bytesPerPixel];
+	uchar* result = new uchar[GetTotalBytes()];
 	copy(imageBytes.get(), imageBytes.get() +GetTotalBytes(), result);
 	return result;
 }

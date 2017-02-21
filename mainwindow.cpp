@@ -3,6 +3,7 @@
 #include <QFileDialog>
 #include "PlatformImageUtils.h"
 #include "ImageFramework.h"
+#include "DebugHelper.h"
 #include "Image.h"
 #include <memory>
 using namespace std;
@@ -36,23 +37,31 @@ void MainWindow::on_pushButton_clicked()
 
 		auto image = PlatformImageUtils::LoadInternalImage(fileName);			
 		//(Kernel::GetSobelXKernel()->CalculateSquare() + Kernel::GetSobelYKernel()->CalculateSquare())->CalculateSquareRoot()
-		auto sobelXImage = ImageFramework::Convolve(image, Kernel::GetSobelXKernel(),ConvolutionBorderHandlingMode::extend);
-		auto sobelXQImage = PlatformImageUtils::QImageFromInternalImage(sobelXImage);
-		PlatformImageUtils::SaveImage(sobelXImage, "C:\\sobelX.png");
-		auto sobelXPixels = sobelXImage->GetNormilizedDoubleData();
+		//auto sobelXImage = ImageFramework::Convolve(image, Kernel::GetSobelXKernel(),ConvolutionBorderHandlingMode::extend);
+		//auto sobelXQImage = PlatformImageUtils::QImageFromInternalImage(sobelXImage);
+		//PlatformImageUtils::SaveImage(sobelXImage, "C:\\sobelX.png");
+		//auto sobelXPixels = sobelXImage->GetDoubleData();
 		//scene->addPixmap(QPixmap::fromImage(sobelXQImage));
 		//ui->graphicsView->setScene(scene);
 		//ui->graphicsView->show();
-		auto sobelYImage = ImageFramework::Convolve(image, Kernel::GetSobelYKernel(), ConvolutionBorderHandlingMode::extend);
-		auto sobelYQImage = PlatformImageUtils::QImageFromInternalImage(sobelYImage);
-		PlatformImageUtils::SaveImage(sobelYImage, "C:\\sobelY.png");
-		auto sobelYPixels = sobelYImage->GetNormilizedDoubleData();
-		int width = image->GetWidth();
-		int height = image->GetHeight();
-		auto sobelOperatorResult = make_unique<uchar[]>(width*height);		
-		std::transform(sobelXPixels.get(), sobelXPixels.get() + width*height, sobelYPixels.get(), sobelOperatorResult.get(), [](double s1, double s2)->uchar {return uchar(sqrt(s1*s1 + s2*s2)*255.); });
-		auto sobelImage = unique_ptr<Image>(new Image(sobelOperatorResult.get(), width, height,1));
-		PlatformImageUtils::SaveImage(sobelImage, "C:\\sobel.png");
+		//auto sobelYImage = ImageFramework::Convolve(image, Kernel::GetSobelYKernel(), ConvolutionBorderHandlingMode::extend);
+		//auto sobelYQImage = PlatformImageUtils::QImageFromInternalImage(sobelYImage);
+		//PlatformImageUtils::SaveImage(sobelYImage, "C:\\sobelY.png");
+		//auto sobelYPixels = sobelYImage->GetDoubleData();
+		//int width = image->GetWidth();
+		//int height = image->GetHeight();
+		//auto sobelOperatorResult = make_unique<uchar[]>(width*height);		
+		//std::transform(sobelXPixels.get(), sobelXPixels.get() + width*height, sobelYPixels.get(), sobelOperatorResult.get(), 
+		//	[](double sx, double sy)->uchar 
+		//{
+		//	return (uchar)(std::min(255.,sqrt(sx*sx + sy*sy))); 
+		//});
+		auto sobelImage = ImageFramework::ApplySobelOperator(image,ConvolutionBorderHandlingMode::zero);
+		scene->addPixmap(QPixmap::fromImage(PlatformImageUtils::QImageFromInternalImage(sobelImage)));
+		ui->graphicsView->setScene(scene);
+		ui->graphicsView->show();
+
+		//PlatformImageUtils::SaveImage(sobelImage, "C:\\sobel.png");
 		//double conv0[] = { 1,0,0,0,0,0,0,0,0 };
 		//auto conv0Image = ImageFramework::Convolve(image, make_unique<Kernel>(conv0,3), ConvolutionBorderHandlingMode::zero);
 		//PlatformImageUtils::SaveImage(conv0Image, "C:\\conv0.png");

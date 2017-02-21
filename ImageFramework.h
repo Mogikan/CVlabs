@@ -10,4 +10,5 @@ public:
 	ImageFramework();
 	~ImageFramework();
 	static unique_ptr<Image> Convolve(const unique_ptr<Image>& originalImage,const unique_ptr<Kernel>& kernel,ConvolutionBorderHandlingMode borderHandlingMode);
+	static unique_ptr<Image> ApplySobelOperator(const unique_ptr<Image>& originalImage, ConvolutionBorderHandlingMode borderHandlingMode);
 };

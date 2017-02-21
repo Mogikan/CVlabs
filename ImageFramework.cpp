@@ -115,3 +115,22 @@ unique_ptr<Image> ImageFramework::Convolve(const unique_ptr<Image>& originalImag
 		}
 	return unique_ptr<Image>(new Image(convolutedImageMatrix->ExtractData(),width, height));
 }
+
+unique_ptr<Image> ImageFramework::ApplySobelOperator(const unique_ptr<Image>& originalImage, ConvolutionBorderHandlingMode borderHandlingMode)
+{
+	auto sobelXImage = Convolve(originalImage, Kernel::GetSobelXKernel(), borderHandlingMode);
+	int width = sobelXImage->GetWidth();
+	int height = sobelXImage->GetHeight();
+	long area = width*height;
+	auto sobelXdoubleBitmap = sobelXImage->GetNormilizedDoubleData();
+	auto sobelYImage = Convolve(originalImage, Kernel::GetSobelYKernel(), borderHandlingMode);
+	auto sobelYdoubleBitmap = sobelYImage->GetNormilizedDoubleData();
+	auto sobelOperatorResult = make_unique<double[]>(area);
+
+	std::transform(sobelXdoubleBitmap.get(), sobelXdoubleBitmap.get() + area, sobelYdoubleBitmap.get(), sobelOperatorResult.get(),
+		[](double sx, double sy)->double 
+	{
+		return sqrt(sx*sx + sy*sy);
+	});
+	return make_unique<Image>(sobelOperatorResult, width, height);
+}

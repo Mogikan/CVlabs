@@ -3,7 +3,7 @@
 
 unique_ptr < double[] > FillValues(double kernelValues[], int size)
 {
-	unique_ptr<double[]> values = make_unique<double[]>(size);
+	unique_ptr<double[]> values = make_unique<double[]>(size*size);
 	copy(kernelValues, kernelValues + size*size, values.get());
 	return move(values);
 }
@@ -12,7 +12,7 @@ unique_ptr < double[] > FillValues(double kernelValues[], int size)
 Kernel::Kernel(double values[], int kernelSize)
 {
 	this->kernelSize = kernelSize;
-	this->values = make_unique<double[]>(kernelSize);
+	this->values = make_unique<double[]>(kernelSize*kernelSize);
 	copy(values, values + kernelSize*kernelSize, this->values.get());
 
 }
@@ -30,7 +30,7 @@ Kernel::~Kernel()
 
 unique_ptr<Kernel> Kernel::GetSobelYKernel()
 {
-	double sobelYKernelValues[9]{
+	double sobelYKernelValues[]{
 		1,2,1,
 		0,0,0,
 		-1,-2,-1
