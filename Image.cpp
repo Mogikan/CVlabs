@@ -5,8 +5,7 @@ Image::Image(uchar* rgbImageBytes, int width, int height,int bytesPerPixel)
 {
 	this->imageBytes = make_unique<uchar[]>(width*height);
 	this->width = width;
-	this->height = height;
-	this->bytesPerPixel = 1;
+	this->height = height;	
 	if (bytesPerPixel == 1)
 	{		
 		copy(rgbImageBytes, rgbImageBytes + width*height, this->imageBytes.get());
@@ -20,21 +19,27 @@ Image::Image(uchar* rgbImageBytes, int width, int height,int bytesPerPixel)
 				0.213 * rgbImageBytes[i * 3] + 
 				0.715 * rgbImageBytes[i * 3 + 1] +
 				0.072 * rgbImageBytes[i * 3 + 2]);
-		}
-		NormalizeImage();
-	}
-	//NormalizeImage();
-	
+		}		
+	}	
+	this->bytesPerPixel = 1;
 }
 
 Image::Image(const unique_ptr<double[]>& normalizedPixels, int width, int height)
 {
 	bytesPerPixel = 1;
 	auto rgbImage = make_unique<uchar[]>(width*height);	
-	auto maxElement = *max(normalizedPixels.get(), normalizedPixels.get() + width*height);
-	auto minElement = *min(normalizedPixels.get(), normalizedPixels.get() + width*height);
+	auto maxElement = *max_element(normalizedPixels.get(), normalizedPixels.get() + width*height);
+	auto minElement = *min_element(normalizedPixels.get(), normalizedPixels.get() + width*height);
 
-	transform(normalizedPixels.get(), normalizedPixels.get() + width*height, rgbImage.get(), [minElement,maxElement](double img)->uchar {return std::min((uchar)255,(uchar)((img-minElement) /(maxElement-minElement) * 255)); });
+	transform(normalizedPixels.get(), normalizedPixels.get() + width*height, rgbImage.get(), [minElement,maxElement](double img)->uchar 
+	{		
+		return std::min((uchar)255,(uchar)((img-minElement) /(maxElement-minElement) * 255.)); 
+	});
+	auto maxElement1 = *max_element(rgbImage.get(), rgbImage.get() + width*height);
+	auto minElement1 = *min_element(rgbImage.get(), rgbImage.get() + width*height);
+
+	DebugHelper::WriteToDebugOutput(maxElement1);
+	DebugHelper::WriteToDebugOutput(minElement1);
 	imageBytes = move(rgbImage);
 	this->width = width;
 	this->height = height;	
@@ -67,10 +72,14 @@ int Image::GetTotalBytes() const
 unique_ptr<double[]> Image::GetNormilizedDoubleData()
 {
 	auto normalizedData = make_unique<double[]>(width*height);
-	auto maxElement = *max(imageBytes.get(), imageBytes.get() + GetTotalBytes());
-	auto minElement = *min(imageBytes.get(), imageBytes.get() + GetTotalBytes());
+	auto maxElement = *max_element(imageBytes.get(), imageBytes.get() + GetTotalBytes());
+	auto minElement = *min_element(imageBytes.get(), imageBytes.get() + GetTotalBytes());
 
-	transform(imageBytes.get(), imageBytes.get() + GetTotalBytes(), normalizedData.get(), [minElement, maxElement](uchar b)->double {return ((double)b - minElement) / ((double)maxElement - minElement);});
+	transform(imageBytes.get(), imageBytes.get() + GetTotalBytes(), normalizedData.get(), [minElement, maxElement](uchar b)->double 
+	{
+		//DebugHelper::WriteToDebugOutput((double)(b - minElement) / (double)(maxElement - minElement));
+		return (double)(b - minElement) / (double)(maxElement - minElement);
+	});
 
 	
 	return normalizedData;
@@ -85,10 +94,10 @@ uchar* Image::GetRawData()
 
 void Image::NormalizeImage()
 {
-	auto maxElement = *max(imageBytes.get(), imageBytes.get() + GetTotalBytes());
-	auto minElement = *min(imageBytes.get(), imageBytes.get() + GetTotalBytes());
+	auto maxElement = *max_element(imageBytes.get(), imageBytes.get() + GetTotalBytes());
+	auto minElement = *min_element(imageBytes.get(), imageBytes.get() + GetTotalBytes());
 	
-	transform(imageBytes.get(), imageBytes.get() + GetTotalBytes(), imageBytes.get(), [minElement, maxElement](uchar b)->uchar {return (uchar)((b - minElement) * 255.0 / (maxElement - minElement));});
+	transform(imageBytes.get(), imageBytes.get() + GetTotalBytes(), imageBytes.get(), [minElement, maxElement](uchar b)->uchar {return (uchar)(255.*(b - minElement) / (double)(maxElement - minElement));});
 }
 
 

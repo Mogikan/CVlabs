@@ -14,6 +14,11 @@ void DebugHelper::WriteToDebugOutput(string s)
 	OutputDebugStringA(os_.str().c_str());	
 }
 
+void DebugHelper::WriteToDebugOutput(double value)
+{
+	WriteToDebugOutput(ToString(value));
+}
+
 void DebugHelper::Dump(double values[], int size, string fileName)
 {
 	ofstream myfile;
