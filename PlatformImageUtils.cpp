@@ -15,6 +15,8 @@ unique_ptr<Image> PlatformImageUtils::LoadInternalImage(QString qImageFileName)
 	return PlatformImageUtils::ConvertQImageToInternalImage(PlatformImageUtils::LoadQImageFromFile(qImageFileName));
 }
 
+
+
 unique_ptr<Image> PlatformImageUtils::ConvertQImageToInternalImage(QImage qImage)
 {
 	auto rgbImage = qImage.convertToFormat(QImage::Format_RGB888);
