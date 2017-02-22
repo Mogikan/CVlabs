@@ -71,7 +71,10 @@
     <ClCompile Include="Kernel.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="NormalizedImage.cpp">
+    <ClCompile Include="Matrix2D.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugHelper.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -109,7 +112,10 @@
     <ClInclude Include="Kernel.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="NormalizedImage.h">
+    <ClInclude Include="Matrix2D.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugHelper.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

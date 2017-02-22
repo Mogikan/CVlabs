@@ -11,7 +11,7 @@ public:
 	static QImage QImageFromInternalImage(const unique_ptr<Image>& image);
 	static unique_ptr<Image> LoadInternalImage(QString qImageFileName);
 	static void SaveImage(const unique_ptr<Image>& image, QString filePath);
-private:
-	static unique_ptr<Image> ConvertQImageToInternalImage(QImage qImage);
 	static QImage LoadQImageFromFile(QString filePath);
+private:
+	static unique_ptr<Image> ConvertQImageToInternalImage(QImage qImage);	
 };

@@ -24,23 +24,25 @@ Image::Image(uchar* rgbImageBytes, int width, int height,int bytesPerPixel)
 	this->bytesPerPixel = 1;
 }
 
-Image::Image(const unique_ptr<double[]>& normalizedPixels, int width, int height)
+Image::Image(const unique_ptr<Matrix2D>& imageMatrix):Image(imageMatrix->ReadData(),imageMatrix->GetWidth(),imageMatrix->GetHeight())
+{
+}
+
+Image::Image(const unique_ptr<double[]>& doublePixels, int width, int height)
 {
 	bytesPerPixel = 1;
 	auto rgbImage = make_unique<uchar[]>(width*height);	
-	auto maxElement = *max_element(normalizedPixels.get(), normalizedPixels.get() + width*height);
-	auto minElement = *min_element(normalizedPixels.get(), normalizedPixels.get() + width*height);
+	auto maxElement = *max_element(doublePixels.get(), doublePixels.get() + width*height);
+	auto minElement = *min_element(doublePixels.get(), doublePixels.get() + width*height);
 
-	transform(normalizedPixels.get(), normalizedPixels.get() + width*height, rgbImage.get(), 
+	transform(doublePixels.get(), doublePixels.get() + width*height, rgbImage.get(), 
 		[minElement,maxElement](double img)->uchar 
 	{		
 		return (uchar)std::min(255.,((img-minElement) /(maxElement-minElement) * 255.)); 
-	});
-	auto maxElement1 = *max_element(rgbImage.get(), rgbImage.get() + width*height);
-	auto minElement1 = *min_element(rgbImage.get(), rgbImage.get() + width*height);
+	});	
 
-	DebugHelper::WriteToDebugOutput(maxElement1);
-	DebugHelper::WriteToDebugOutput(minElement1);
+	//DebugHelper::WriteToDebugOutput(maxElement1);
+	//DebugHelper::WriteToDebugOutput(minElement1);
 	imageBytes = move(rgbImage);
 	this->width = width;
 	this->height = height;	
@@ -77,7 +79,7 @@ unique_ptr<double[]> Image::GetDoubleData()
 	{
 		return b;
 	});
-	return doubleData;
+	return move(doubleData);
 }
 
 unique_ptr<double[]> Image::GetNormilizedDoubleData()
@@ -94,6 +96,11 @@ unique_ptr<double[]> Image::GetNormilizedDoubleData()
 
 	
 	return normalizedData;
+}
+
+unique_ptr<Matrix2D> Image::GetDoubleMatrix()
+{
+	return make_unique<Matrix2D>(move(GetDoubleData()),GetWidth(),GetHeight());
 }
 
 uchar* Image::GetRawData()

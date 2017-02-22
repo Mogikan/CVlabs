@@ -9,6 +9,6 @@ class ImageFramework
 public:
 	ImageFramework();
 	~ImageFramework();
-	static unique_ptr<Image> Convolve(const unique_ptr<Image>& originalImage,const unique_ptr<Kernel>& kernel,ConvolutionBorderHandlingMode borderHandlingMode);
-	static unique_ptr<Image> ApplySobelOperator(const unique_ptr<Image>& originalImage, ConvolutionBorderHandlingMode borderHandlingMode);
+	static unique_ptr<Matrix2D> Convolve(const unique_ptr<Matrix2D>& originalImage,const unique_ptr<Kernel>& kernel,ConvolutionBorderHandlingMode borderHandlingMode);
+	static unique_ptr<Matrix2D> ApplySobelOperator(const unique_ptr<Matrix2D>& originalImage, ConvolutionBorderHandlingMode borderHandlingMode);
 };

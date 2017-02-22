@@ -93,38 +93,37 @@ static double GetIntensity(const unique_ptr<Matrix2D>& image, int x, int y, Conv
 
 
 
-unique_ptr<Image> ImageFramework::Convolve(const unique_ptr<Image>& originalImage, const unique_ptr<Kernel>& kernel, ConvolutionBorderHandlingMode borderHandlingMode)
-{
-	auto normalizedDoubleImage = originalImage->GetNormilizedDoubleData();	
-	int width = originalImage->GetWidth();
-	int height = originalImage->GetHeight();
-	auto originalImageMatrix = unique_ptr<Matrix2D>(new Matrix2D(move(normalizedDoubleImage), width, height));
+unique_ptr<Matrix2D> ImageFramework::Convolve(const unique_ptr<Matrix2D>& originalImageMatrix, const unique_ptr<Kernel>& kernel, ConvolutionBorderHandlingMode borderHandlingMode)
+{	
+	int width = originalImageMatrix->GetWidth();
+	int height = originalImageMatrix->GetHeight();
 	auto convolutedImageMatrix = unique_ptr<Matrix2D>(new Matrix2D(make_unique<double[]>(width*height), width, height));
 	for (int y = 0; y < height; y++)
 		for (int x = 0; x < width; x++)
 		{
 			double convolutionValue = 0;
-			for (int yk = -kernel->GetRadius(); yk < kernel->GetRadius()+1; yk++)
-				for (int xk = -kernel->GetRadius(); xk < kernel->GetRadius()+1; xk++)
+			for (int yk = -kernel->GetYRadius(); yk < kernel->GetYRadius()+1; yk++)
+				for (int xk = -kernel->GetXRadius(); xk < kernel->GetXRadius()+1; xk++)
 				{	
-					double imageIntensity = GetIntensity(originalImageMatrix, x - xk, y - yk, borderHandlingMode);
-					double kernelValue = kernel->GetElementAt(xk + kernel->GetRadius(), yk + kernel->GetRadius());
+					double imageIntensity = GetIntensity(originalImageMatrix, x + xk, y + yk, borderHandlingMode);
+					double kernelValue = kernel->GetElementAt(kernel->GetXRadius()-xk, kernel->GetYRadius()- yk);
 					convolutionValue += imageIntensity*kernelValue;				
 				}
 			convolutedImageMatrix->SetElementAt(x, y, convolutionValue);
 		}
-	return unique_ptr<Image>(new Image(convolutedImageMatrix->ExtractData(),width, height));
+	return move(convolutedImageMatrix);
+	//return unique_ptr<Image>(new Image(convolutedImageMatrix->ExtractData(),width, height));
 }
 
-unique_ptr<Image> ImageFramework::ApplySobelOperator(const unique_ptr<Image>& originalImage, ConvolutionBorderHandlingMode borderHandlingMode)
+unique_ptr<Matrix2D> ImageFramework::ApplySobelOperator(const unique_ptr<Matrix2D>& originalImage, ConvolutionBorderHandlingMode borderHandlingMode)
 {
 	auto sobelXImage = Convolve(originalImage, Kernel::GetSobelXKernel(), borderHandlingMode);
 	int width = sobelXImage->GetWidth();
 	int height = sobelXImage->GetHeight();
 	long area = width*height;
-	auto sobelXdoubleBitmap = sobelXImage->GetNormilizedDoubleData();
+	auto sobelXdoubleBitmap = sobelXImage->ExtractData();
 	auto sobelYImage = Convolve(originalImage, Kernel::GetSobelYKernel(), borderHandlingMode);
-	auto sobelYdoubleBitmap = sobelYImage->GetNormilizedDoubleData();
+	auto sobelYdoubleBitmap = sobelYImage->ExtractData();
 	auto sobelOperatorResult = make_unique<double[]>(area);
 
 	std::transform(sobelXdoubleBitmap.get(), sobelXdoubleBitmap.get() + area, sobelYdoubleBitmap.get(), sobelOperatorResult.get(),
@@ -132,5 +131,5 @@ unique_ptr<Image> ImageFramework::ApplySobelOperator(const unique_ptr<Image>& or
 	{
 		return sqrt(sx*sx + sy*sy);
 	});
-	return make_unique<Image>(sobelOperatorResult, width, height);
+	return make_unique<Matrix2D>(move(sobelOperatorResult), width, height);
 }
