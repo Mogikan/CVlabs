@@ -6,16 +6,28 @@ Matrix2D::Matrix2D(double values[], int width, int height)
 {
 	this->width = width;
 	this->height = height;
-	this->elements = make_unique<double[]>(width*height);
-	std::copy(values, values + width*height, this->elements.get());
+	this->elements = std::vector<double>(values,values+width*height);
 }
 
-Matrix2D::Matrix2D(unique_ptr<double[]> elements,int width, int height)
+Matrix2D::Matrix2D(vector<double> imagePixels, int width, int height)
 {
-	this->elements = move(elements);
+	this->elements = imagePixels;
 	this->width = width;
 	this->height = height;
+}
 
+Matrix2D::Matrix2D(int width, int height)
+{
+	this->elements = std::vector<double>(width*height);
+	this->width = width;
+	this->height = height;
+}
+
+Matrix2D::Matrix2D(const Matrix2D & matrix)
+{
+	this->elements = std::vector<double>(matrix.elements);
+	this->width = matrix.width;
+	this->height = matrix.height;
 }
 
 
@@ -24,18 +36,24 @@ double Matrix2D::GetElementAt(int x, int y)
 	return elements[y*width+x];
 }
 
+double Matrix2D::GetElementAt(int plainIndex)
+{
+	return elements[plainIndex];
+}
+
 void Matrix2D::SetElementAt(int x, int y, double value)
 {
 	elements[y*width + x] = value;
 }
 
-unique_ptr<double[]> Matrix2D::ExtractData()
+void Matrix2D::SetElementAt(int plainIndex, double value)
 {
-	return move(elements);
+	elements[plainIndex] = value;
 }
 
-const unique_ptr<double[]>& Matrix2D::ReadData()
+std::vector<double> Matrix2D::ExtractData()
 {
+
 	return elements;
 }
 

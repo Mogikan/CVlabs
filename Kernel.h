@@ -3,15 +3,21 @@
 #include <memory>
 #include <algorithm>
 #include <Matrix2D.h>
+#include <Point.h>
 using namespace std;
 class Kernel : public Matrix2D
 {
 public:	
-	Kernel(double values[], int width, int height);
-	Kernel(unique_ptr<double[]> values, int width, int height);
+	Kernel(double values[], int width, int height,Point applicationPoint);
+	Kernel(vector<double> values, int width, int height,Point applicationPoint);
+	Kernel(const Kernel& kernel);
 	~Kernel();
-	static unique_ptr<Kernel> GetSobelXKernel();
-	static unique_ptr<Kernel> GetSobelYKernel();	
-	int GetXRadius();
-	int GetYRadius();	
+	Point GetApplicationPoint();
+	static Kernel GetSobelX();
+	static Kernel GetSobelY();
+
+	static unique_ptr<Kernel> BuildGaussX(double sigma);
+	static unique_ptr<Kernel> BuildGaussY(double sigma);
+private:
+	Point applicationPoint;
 };

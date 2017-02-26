@@ -24,10 +24,10 @@ MainWindow::~MainWindow()
 void TestConvolution() 
 {
 	double testKernel[] = { -1,-2,-1,0,0,0,1,2,1 };
-	auto kernel = make_unique<Kernel>(testKernel, 3,3);
+	auto kernel = make_unique<Kernel>(testKernel, 3,3,Point(1,1));
 	uchar* input = new uchar[9]{ 1,2,3,4,5,6,7,8,9 };
 	auto image = make_unique<Image>(input, 3, 3, 1);
-	auto resultImg = ImageFramework::Convolve(image->GetDoubleMatrix(), kernel, ConvolutionBorderHandlingMode::zero);
+	auto resultImg = ImageFramework::Convolve(*image->GetDoubleMatrix(), *kernel, ConvolutionBorderHandlingMode::zero);
 	auto result = resultImg->ExtractData();
 }
 
@@ -49,21 +49,31 @@ void MainWindow::on_pushButton_clicked()
 void MainWindow::on_pushButton_2_clicked()
 {
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
-	auto sobelProcessedImageMatrix = ImageFramework::ApplySobelOperator(image->GetDoubleMatrix(), ConvolutionBorderHandlingMode::zero);
-	auto sobelImage = make_unique<Image>(sobelProcessedImageMatrix->ReadData(), sobelProcessedImageMatrix->GetWidth(), sobelProcessedImageMatrix->GetHeight());
-	
-	ShowImage(PlatformImageUtils::QImageFromInternalImage(sobelImage));
+	auto pyramid = ImageFramework::BuildGaussPyramid(*image->GetDoubleMatrix(), 3, 3, 1.6, 0.5);
+	for (int i = 0; i < pyramid->GetOctavesCount(); i++)
+	{
+		auto octave = pyramid->OctaveAt(i);
+		for (int j = 0; j < octave.GetLayersCount(); j++)
+		{
+			auto layer = octave.LayerAt(j);
+			PlatformImageUtils::SaveImage(Image(layer.GetImage()),"C:\\piramid\\"+QString::number(i)+"_"+ QString::number(j)+".png");
+		}
+	}
+	//auto sobelProcessedImageMatrix = ImageFramework::ApplySobelOperator(*image->GetDoubleMatrix(), ConvolutionBorderHandlingMode::zero);
+	//auto sobelImage = make_unique<Image>(sobelProcessedImageMatrix->ExtractData(), sobelProcessedImageMatrix->GetWidth(), sobelProcessedImageMatrix->GetHeight());
+	//
+	//ShowImage(PlatformImageUtils::QImageFromInternalImage(sobelImage));
 	
 }
 
 void MainWindow::on_pushButton_3_clicked()
 {
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
-	double gaussValues[] = { 1,2,1 };
-	auto gausKernelX = make_unique<Kernel>(gaussValues, 1, 3);
-	auto gausKernelY = make_unique<Kernel>(gaussValues, 3, 1);
-	auto gaussImageMatrix = ImageFramework::Convolve(ImageFramework::Convolve(image->GetDoubleMatrix(), gausKernelX, ConvolutionBorderHandlingMode::extend), gausKernelY, ConvolutionBorderHandlingMode::extend);
-	auto gaussImage = make_unique<Image>(gaussImageMatrix->ReadData(), gaussImageMatrix->GetWidth(), gaussImageMatrix->GetHeight());
+	//double gaussValues[] = { 1,2,1 };
+	//auto gausKernelY = make_unique<Kernel>(gaussValues, 1, 3,Point(0,1));
+	//auto gausKernelX = make_unique<Kernel>(gaussValues, 3, 1,Point(1,0));
+	auto gaussImageMatrix = ImageFramework::ApplyGaussSmooth(*image->GetDoubleMatrix(), 1);
+	auto gaussImage = make_unique<Image>(gaussImageMatrix->ExtractData(), gaussImageMatrix->GetWidth(), gaussImageMatrix->GetHeight());
 	qImage = PlatformImageUtils::QImageFromInternalImage(gaussImage);
 	ShowImage(qImage);	
 }

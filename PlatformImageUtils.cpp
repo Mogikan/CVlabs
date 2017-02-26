@@ -34,9 +34,9 @@ QImage PlatformImageUtils::LoadQImageFromFile(QString fileName)
 	return QImage(fileName);	
 }
 
-void PlatformImageUtils::SaveImage(const unique_ptr<Image>& image, QString filePath)
+void PlatformImageUtils::SaveImage(Image& image, QString filePath)
 {
-	auto imageData = image->GetRawData();
-	QImage qImage(imageData, image->GetWidth(), image->GetHeight(), QImage::Format::Format_Grayscale8);
+	auto imageData = image.GetRawData();
+	QImage qImage(imageData, image.GetWidth(), image.GetHeight(), QImage::Format::Format_Grayscale8);
 	qImage.save(filePath);
 }

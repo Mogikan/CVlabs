@@ -71,19 +71,26 @@
     <ClCompile Include="Kernel.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+<<<<<<< Updated upstream
+    <ClCompile Include="Matrix2D.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DebugHelper.cpp">
+=======
     <ClCompile Include="DebugHelper.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
     <ClCompile Include="Matrix2D.cpp">
       <Filter>Generated Files\Debug</Filter>
     </ClCompile>
-    <ClCompile Include="Layer.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="GaussPyramid.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
     <ClCompile Include="Octave.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Layer.cpp">
+>>>>>>> Stashed changes
       <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -121,22 +128,26 @@
     <ClInclude Include="Kernel.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
+<<<<<<< Updated upstream
+    <ClInclude Include="Matrix2D.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugHelper.h">
+=======
     <ClInclude Include="DebugHelper.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="Matrix2D.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="Layer.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Point.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="GaussPyramid.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="Octave.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Layer.h">
+>>>>>>> Stashed changes
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>
