@@ -23,8 +23,7 @@ public:
 	unique_ptr<Matrix2D> GetDoubleMatrix();
 	uchar* GetRawData();
 	void NormalizeImage();
-private:
-	
+private:	
 	unique_ptr<uchar[]> imageBytes;
 	int width;
 	int height;

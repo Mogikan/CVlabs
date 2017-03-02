@@ -35,8 +35,8 @@ double GaussPyramid::L(int x, int y, double sigma)
 {
 	auto level = (int)log2(sigma);
 	auto octave = OctaveAt(level);
-	int effectiveX = x / pow(2, level);
-	int effectiveY = y / pow(2, level);
+	int effectiveX = (int)(x / pow(2, level));
+	int effectiveY = (int)(y / pow(2, level));
 	double sigmaRest = sigma / pow(2, level);
 	auto layersInOctave = octave.LayersCount() - 1;
 	double scaleInterval = pow(2, 1. / layersInOctave);
@@ -49,7 +49,7 @@ double GaussPyramid::L(int x, int y, double sigma)
 		levelSigma = nextSigma;
 		nextSigma = levelSigma * scaleInterval;
 	}
-	return octave.LayerAt(desiredLevel).Image().PixelAt(effectiveX, effectiveY);
+	return octave.LayerAt(desiredLevel).GetImage().PixelAt(effectiveX, effectiveY);
 }
 
 void GaussPyramid::BuildOctaves(unique_ptr<Matrix2D> firstImage,int octaveCount, int layersInOctave)
