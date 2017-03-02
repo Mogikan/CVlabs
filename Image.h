@@ -15,6 +15,7 @@ public:
 	~Image();
 	int Width() const;
 	int Height() const;
+	uchar PixelAt(int x, int y) const;
 	int BytesPerPixel() const;
 	int GetTotalBytes() const;	
 	vector<double> GetDoubleData();

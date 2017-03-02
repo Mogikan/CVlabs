@@ -49,29 +49,15 @@ void MainWindow::on_pushButton_clicked()
 void MainWindow::on_pushButton_2_clicked()
 {
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
-	auto pyramid = ImageFramework::BuildGaussPyramid(*image->GetDoubleMatrix(), 5, 3, 1.6, 0.5);
-	for (int i = 0; i < pyramid->OctavesCount(); i++)
-	{
-		auto octave = pyramid->OctaveAt(i);
-		for (int j = 0; j < octave.LayersCount(); j++)
-		{
-			auto layer = octave.LayerAt(j);
-			PlatformImageUtils::SaveImage(Image(layer.Image()),"C:\\piramid\\"+QString::number(i)+"_"+ QString::number(j)+".png");
-		}
-	}
-	//auto sobelProcessedImageMatrix = ImageFramework::ApplySobelOperator(*image->GetDoubleMatrix(), ConvolutionBorderHandlingMode::zero);
-	//auto sobelImage = make_unique<Image>(sobelProcessedImageMatrix->ExtractData(), sobelProcessedImageMatrix->GetWidth(), sobelProcessedImageMatrix->GetHeight());
-	//
-	//ShowImage(PlatformImageUtils::QImageFromInternalImage(sobelImage));
+	auto sobelProcessedImageMatrix = ImageFramework::ApplySobelOperator(*image->GetDoubleMatrix(), BorderMode::zero);
+	auto sobelImage = make_unique<Image>(sobelProcessedImageMatrix->ExtractData(), sobelProcessedImageMatrix->Width(), sobelProcessedImageMatrix->Height());	
+	ShowImage(PlatformImageUtils::QImageFromInternalImage(sobelImage));
 	
 }
 
 void MainWindow::on_pushButton_3_clicked()
 {
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
-	//double gaussValues[] = { 1,2,1 };
-	//auto gausKernelY = make_unique<Kernel>(gaussValues, 1, 3,Point(0,1));
-	//auto gausKernelX = make_unique<Kernel>(gaussValues, 3, 1,Point(1,0));
 	auto gaussImageMatrix = ImageFramework::ApplyGaussSmooth(*image->GetDoubleMatrix(), 1);
 	auto gaussImage = make_unique<Image>(gaussImageMatrix->ExtractData(), gaussImageMatrix->Width(), gaussImageMatrix->Height());
 	qImage = PlatformImageUtils::QImageFromInternalImage(gaussImage);
@@ -89,4 +75,22 @@ void MainWindow::ShowImage(QImage image)
 	scene->addPixmap(QPixmap::fromImage(image));
 	ui->graphicsView->setScene(scene);
 	ui->graphicsView->show();
+}
+
+void MainWindow::on_pushButton_4_clicked()
+{
+	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
+	int octaveCount = log2(min(image->Height(),image->Width()));
+	
+	auto pyramid = ImageFramework::BuildGaussPyramid(*image->GetDoubleMatrix(), octaveCount, 3, 1.6, 0.5);
+	for (int i = 0; i < pyramid->OctavesCount(); i++)
+	{
+		auto octave = pyramid->OctaveAt(i);
+		for (int j = 0; j < octave.LayersCount(); j++)
+		{
+			auto layer = octave.LayerAt(j);
+			PlatformImageUtils::SaveImage(Image(layer.ImageD()),
+				"C:\\Pyramid\\Octave_" + QString::number(i) + "_Layer_" + QString::number(j) + "_Sigma_" + QString::number(layer.Sigma()) + "_ESigma_" + QString::number(layer.EffectiveSigma()) + ".png");
+		}
+	}
 }

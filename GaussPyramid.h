@@ -18,6 +18,7 @@ public:
 	int OctavesCount();
 	const Octave& OctaveAt(int index);	
 	void AddOctave(unique_ptr<Octave> octave);
+	double L(int x, int y, double sigma);
 private:
 	int octavesCount =0;
 	std::vector<unique_ptr<Octave>> octaves;

@@ -11,7 +11,7 @@ Octave::Octave(unique_ptr<Matrix2D> firstImage, int layersInOctave, double sigma
 		double nextSigma = runningSigma * scaleInterval;
 		double convolutionSigma = sqrt(nextSigma*nextSigma - runningSigma*runningSigma);
 		runningSigma = nextSigma;
-		auto runningImage = LayerAt(LayersCount() - 1).Image();
+		auto runningImage = LayerAt(LayersCount() - 1).ImageD();
 		auto nextImage = ImageFramework::ApplyGaussSmooth(runningImage,convolutionSigma);
 		AddLayer(move(make_unique<Layer>(move(nextImage), runningSigma,depth)));
 	}	

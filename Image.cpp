@@ -63,6 +63,11 @@ int Image::Height() const
 	return height;
 }
 
+uchar Image::PixelAt(int x, int y) const
+{
+	return imageBytes[y*width + x];
+}
+
 int Image::BytesPerPixel() const
 {
 	return bytesPerPixel;

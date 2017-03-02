@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>856</width>
-    <height>619</height>
+    <width>890</width>
+    <height>628</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -19,8 +19,8 @@
      <rect>
       <x>770</x>
       <y>0</y>
-      <width>75</width>
-      <height>31</height>
+      <width>111</width>
+      <height>21</height>
      </rect>
     </property>
     <property name="text">
@@ -32,8 +32,8 @@
      <rect>
       <x>770</x>
       <y>30</y>
-      <width>75</width>
-      <height>31</height>
+      <width>111</width>
+      <height>21</height>
      </rect>
     </property>
     <property name="text">
@@ -60,12 +60,25 @@
      <rect>
       <x>770</x>
       <y>60</y>
-      <width>75</width>
-      <height>31</height>
+      <width>111</width>
+      <height>21</height>
      </rect>
     </property>
     <property name="text">
      <string>Apply Gauss</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_4">
+    <property name="geometry">
+     <rect>
+      <x>770</x>
+      <y>90</y>
+      <width>111</width>
+      <height>23</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Build Gauss Pyramid</string>
     </property>
    </widget>
   </widget>
@@ -74,7 +87,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>856</width>
+     <width>890</width>
      <height>21</height>
     </rect>
    </property>
