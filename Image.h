@@ -10,12 +10,12 @@ class Image
 {
 public:
 	Image(uchar* rgbImageBytes,int width,int height,int bytesPerPixel);
-	Image(Matrix2D& imageMatrix);
+	Image(const Matrix2D& imageMatrix);
 	Image(vector<double> normalizedPixels, int width, int height);
 	~Image();
-	int GetWidth() const;
-	int GetHeight() const;
-	int GetBytesPerPixel() const;
+	int Width() const;
+	int Height() const;
+	int BytesPerPixel() const;
 	int GetTotalBytes() const;	
 	vector<double> GetDoubleData();
 	vector<double> GetNormilizedDoubleData();

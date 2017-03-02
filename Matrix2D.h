@@ -13,10 +13,10 @@ public:
 	double GetElementAt(int plainIndex);
 	void SetElementAt(int x, int y, double value);
 	void SetElementAt(int plainIndex, double value);
-	vector<double> ExtractData();
-	int GetWidth();
-	int GetHeight();
-	int GetTotalElements();
+	vector<double> ExtractData() const;
+	int Width() const;
+	int Height() const;
+	int TotalElements();
 	~Matrix2D();
 private:
 	int width;

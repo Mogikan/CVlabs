@@ -1,7 +1,12 @@
 #include "GaussPyramid.h"
 #include "ImageFramework.h"
 
-GaussPyramid::GaussPyramid(Matrix2D& originalImage, int octaveCount, int layersInOctave, double sigma0, double sigmaA)
+GaussPyramid::GaussPyramid(
+	Matrix2D& originalImage, 
+	int octaveCount, 
+	int layersInOctave, 
+	double sigma0, 
+	double sigmaA)
 {
 	this->sigma0 = sigma0;
 	this->sigmaA = sigmaA;
@@ -10,7 +15,7 @@ GaussPyramid::GaussPyramid(Matrix2D& originalImage, int octaveCount, int layersI
 	BuildOctaves(move(firstImage),octaveCount, layersInOctave);
 }
 
-int GaussPyramid::GetOctavesCount()
+int GaussPyramid::OctavesCount()
 {
 	return octavesCount;
 }
@@ -33,10 +38,10 @@ void GaussPyramid::BuildOctaves(unique_ptr<Matrix2D> firstImage,int octaveCount,
 	for (int i = 0; i < octaveCount; i++)
 	{	
 
-		AddOctave(make_unique<Octave>(move(runningImage), runningSigma, layersInOctave));
-		auto octave = OctaveAt(GetOctavesCount()-1);
-		runningSigma *= 2;
-		auto lastOctaveImage = octave.LayerAt(octave.GetLayersCount() - 1).GetImage();
+		AddOctave(make_unique<Octave>(move(runningImage), layersInOctave, runningSigma, i));
+		auto octave = OctaveAt(OctavesCount()-1);
+		//runningSigma *= 2;
+		auto lastOctaveImage = octave.LayerAt(octave.LayersCount() - 1).Image();
 		runningImage = ImageFramework::DownscaleImageTwice(lastOctaveImage);
 	}
 }

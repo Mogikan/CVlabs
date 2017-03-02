@@ -7,7 +7,7 @@ PlatformImageUtils::PlatformImageUtils()
 
 QImage PlatformImageUtils::QImageFromInternalImage(const unique_ptr<Image>& image)
 {
-	return QImage(image->GetRawData(),image->GetWidth(),image->GetHeight(), QImage::Format_Grayscale8);
+	return QImage(image->GetRawData(),image->Width(),image->Height(), QImage::Format_Grayscale8);
 }
 
 unique_ptr<Image> PlatformImageUtils::LoadInternalImage(QString qImageFileName)
@@ -37,6 +37,6 @@ QImage PlatformImageUtils::LoadQImageFromFile(QString fileName)
 void PlatformImageUtils::SaveImage(Image& image, QString filePath)
 {
 	auto imageData = image.GetRawData();
-	QImage qImage(imageData, image.GetWidth(), image.GetHeight(), QImage::Format::Format_Grayscale8);
+	QImage qImage(imageData, image.Width(), image.Height(), QImage::Format::Format_Grayscale8);
 	qImage.save(filePath);
 }

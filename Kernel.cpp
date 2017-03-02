@@ -3,12 +3,14 @@
 #include <math.h>
 
 
-Kernel::Kernel(double values[], int width, int height,Point applicationPoint) :Matrix2D(values, width, height)
+Kernel::Kernel(double values[], int width, int height,Point applicationPoint) 
+	:Matrix2D(values, width, height)
 {
 	this->applicationPoint = applicationPoint;
 }
 
-Kernel::Kernel(vector<double> values, int width, int height,Point applicationPoint) : Matrix2D(values, width, height)
+Kernel::Kernel(vector<double> values, int width, int height,Point applicationPoint) 
+	: Matrix2D(values, width, height)
 {
 	this->applicationPoint = applicationPoint;
 }
@@ -22,7 +24,7 @@ Kernel::~Kernel()
 {
 }
 
-Point Kernel::GetApplicationPoint()
+Point Kernel::Center()
 {
 	return applicationPoint;
 }

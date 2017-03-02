@@ -9,26 +9,26 @@ ImageFramework::~ImageFramework()
 {
 }
 
-static double GetIntensity(Matrix2D& image, int x, int y, ConvolutionBorderHandlingMode borderHandlingMode)
+static double GetIntensity(Matrix2D& image, int x, int y, BorderMode borderHandlingMode)
 {
 	int effectiveX = x;
 	int effectiveY = y;
-	int width = image.GetWidth();
-	int height = image.GetHeight();
+	int width = image.Width();
+	int height = image.Height();
 	if (x < 0)
 	{
 		switch (borderHandlingMode)
 		{
-		case ConvolutionBorderHandlingMode::zero:
+		case BorderMode::zero:
 			return 0;
 			break;
-		case ConvolutionBorderHandlingMode::extend:
+		case BorderMode::extend:
 			effectiveX = 0;
 			break;
-		case ConvolutionBorderHandlingMode::mirror:
+		case BorderMode::mirror:
 			effectiveX = -x - 1;
 			break;
-		case ConvolutionBorderHandlingMode::wrap:
+		case BorderMode::wrap:
 			effectiveX = width + x;
 			break;
 		}
@@ -37,16 +37,16 @@ static double GetIntensity(Matrix2D& image, int x, int y, ConvolutionBorderHandl
 	{
 		switch (borderHandlingMode)
 		{
-		case ConvolutionBorderHandlingMode::zero:
+		case BorderMode::zero:
 			return 0;
 			break;
-		case ConvolutionBorderHandlingMode::extend:
+		case BorderMode::extend:
 			effectiveY = 0;
 			break;
-		case ConvolutionBorderHandlingMode::mirror:
+		case BorderMode::mirror:
 			effectiveY = -y - 1;
 			break;
-		case ConvolutionBorderHandlingMode::wrap:
+		case BorderMode::wrap:
 			effectiveY = height + y;
 			break;
 		}
@@ -55,16 +55,16 @@ static double GetIntensity(Matrix2D& image, int x, int y, ConvolutionBorderHandl
 	{
 		switch (borderHandlingMode)
 		{
-		case ConvolutionBorderHandlingMode::zero:
+		case BorderMode::zero:
 			return 0;
 			break;
-		case ConvolutionBorderHandlingMode::extend:
+		case BorderMode::extend:
 			effectiveX = width - 1;
 			break;
-		case ConvolutionBorderHandlingMode::mirror:
+		case BorderMode::mirror:
 			effectiveX = width - 1 - (x - width);
 			break;
-		case ConvolutionBorderHandlingMode::wrap:
+		case BorderMode::wrap:
 			effectiveX = x - width;
 			break;
 		}
@@ -73,16 +73,16 @@ static double GetIntensity(Matrix2D& image, int x, int y, ConvolutionBorderHandl
 	{
 		switch (borderHandlingMode)
 		{
-		case ConvolutionBorderHandlingMode::zero:
+		case BorderMode::zero:
 			return 0;
 			break;
-		case ConvolutionBorderHandlingMode::extend:
+		case BorderMode::extend:
 			effectiveY = height - 1;
 			break;
-		case ConvolutionBorderHandlingMode::mirror:
+		case BorderMode::mirror:
 			effectiveY = height - 1 - (x - height);
 			break;
-		case ConvolutionBorderHandlingMode::wrap:
+		case BorderMode::wrap:
 			effectiveY = x - height;
 			break;
 		}
@@ -95,20 +95,20 @@ static double GetIntensity(Matrix2D& image, int x, int y, ConvolutionBorderHandl
 unique_ptr<Matrix2D> ImageFramework::Convolve(
 	Matrix2D& originalImageMatrix,
 	Kernel& kernel, 
-	ConvolutionBorderHandlingMode borderHandlingMode)
+	BorderMode borderHandlingMode)
 {	
-	int width = originalImageMatrix.GetWidth();
-	int height = originalImageMatrix.GetHeight();
+	int width = originalImageMatrix.Width();
+	int height = originalImageMatrix.Height();
 	auto convolutedImageMatrix = make_unique<Matrix2D>(width, height);
 	for (int y = 0; y < height; y++)
 		for (int x = 0; x < width; x++)
 		{
 			double convolutionValue = 0;
-			for (int yk = -kernel.GetApplicationPoint().y; yk <  kernel.GetHeight() - kernel.GetApplicationPoint().y; yk++)
-				for (int xk = -kernel.GetApplicationPoint().x; xk < kernel.GetWidth()- kernel.GetApplicationPoint().x; xk++)
+			for (int yk = -kernel.Center().y; yk <  kernel.Height() - kernel.Center().y; yk++)
+				for (int xk = -kernel.Center().x; xk < kernel.Width()- kernel.Center().x; xk++)
 				{	
 					double imageIntensity = GetIntensity(originalImageMatrix, x + xk, y + yk, borderHandlingMode);
-					double kernelValue = kernel.GetElementAt(kernel.GetApplicationPoint().x-xk, kernel.GetApplicationPoint().y - yk);
+					double kernelValue = kernel.GetElementAt(kernel.Center().x-xk, kernel.Center().y - yk);
 					convolutionValue += imageIntensity*kernelValue;				
 				}
 			convolutedImageMatrix->SetElementAt(x, y, convolutionValue);
@@ -116,11 +116,11 @@ unique_ptr<Matrix2D> ImageFramework::Convolve(
 	return move(convolutedImageMatrix);
 }
 
-unique_ptr<Matrix2D> ImageFramework::ApplySobelOperator(Matrix2D& originalImage, ConvolutionBorderHandlingMode borderHandlingMode)
+unique_ptr<Matrix2D> ImageFramework::ApplySobelOperator(Matrix2D& originalImage, BorderMode borderHandlingMode)
 {
 	auto sobelXImage = Convolve(originalImage, Kernel::GetSobelX(), borderHandlingMode);
-	int width = sobelXImage->GetWidth();
-	int height = sobelXImage->GetHeight();
+	int width = sobelXImage->Width();
+	int height = sobelXImage->Height();
 	long area = width*height;
 	auto sobelXdoubleBitmap = sobelXImage->ExtractData();
 	auto sobelYImage = Convolve(originalImage, Kernel::GetSobelY(), borderHandlingMode);
@@ -145,22 +145,22 @@ unique_ptr<Matrix2D> ImageFramework::ApplyGaussSmooth(Matrix2D& image, double si
 	auto xSmoothedImage = ImageFramework::Convolve(
 		image,
 		*(gausKernelX.get()),
-		ConvolutionBorderHandlingMode::extend);
+		BorderMode::extend);
 
 	auto gaussImageMatrix = ImageFramework::Convolve(
 		*xSmoothedImage,
 		*(gausKernelY.get()), 
-		ConvolutionBorderHandlingMode::extend);
+		BorderMode::extend);
 
 	return gaussImageMatrix;
 }
 
 unique_ptr<Matrix2D> ImageFramework::DownscaleImageTwice(Matrix2D & image)
 {
-	auto result = make_unique<Matrix2D>(image.GetWidth()/2,image.GetHeight()/2);
-	for (int y = 0; y < result->GetHeight(); y++)
+	auto result = make_unique<Matrix2D>(image.Width()/2,image.Height()/2);
+	for (int y = 0; y < result->Height(); y++)
 	{
-		for (int x = 0;x < result->GetWidth();x++)
+		for (int x = 0;x < result->Width();x++)
 		{
 			result->SetElementAt(x, y,
 				(
@@ -176,7 +176,12 @@ unique_ptr<Matrix2D> ImageFramework::DownscaleImageTwice(Matrix2D & image)
 
 
 
-unique_ptr<GaussPyramid> ImageFramework::BuildGaussPyramid(Matrix2D& image,int octaveCount, int layersInOctave, double sigma0, double sigmaA)
+unique_ptr<GaussPyramid> ImageFramework::BuildGaussPyramid(
+	Matrix2D& image,
+	int octaveCount, 
+	int layersInOctave, 
+	double sigma0, 
+	double sigmaA)
 {
 	return make_unique<GaussPyramid>(image,octaveCount,layersInOctave,sigma0, sigmaA);
 }

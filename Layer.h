@@ -5,11 +5,14 @@ using namespace std;
 class Layer
 {
 public:
-	Layer(unique_ptr<Matrix2D> image, double scale);
+	Layer(unique_ptr<Matrix2D> image, double scale, int depth);
 	Layer(const Layer& anotherLayer);
-	Matrix2D& GetImage() const;
+	const Matrix2D& Image() const;
+	double Sigma() const;
+	double EffectiveSigma() const;
 private:
 	unique_ptr<Matrix2D> image;
-	double scale;
+	double sigma;
+	int depth;
 };
 

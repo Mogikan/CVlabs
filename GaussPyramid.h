@@ -9,8 +9,13 @@ using namespace std;
 class GaussPyramid
 {
 public:
-	GaussPyramid(Matrix2D& originalImage,int octaveCount,int layersInOctave,double sigma0, double sigmaA);
-	int GetOctavesCount();
+	GaussPyramid(
+		Matrix2D& originalImage,
+		int octaveCount,
+		int layersInOctave,
+		double sigma0, 
+		double sigmaA);
+	int OctavesCount();
 	const Octave& OctaveAt(int index);	
 	void AddOctave(unique_ptr<Octave> octave);
 private:

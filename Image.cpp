@@ -24,7 +24,8 @@ Image::Image(uchar* rgbImageBytes, int width, int height,int bytesPerPixel)
 	this->bytesPerPixel = 1;
 }
 
-Image::Image(Matrix2D& imageMatrix):Image(imageMatrix.ExtractData(),imageMatrix.GetWidth(),imageMatrix.GetHeight())
+Image::Image(const Matrix2D& imageMatrix)
+	:Image(imageMatrix.ExtractData(),imageMatrix.Width(),imageMatrix.Height())
 {
 }
 
@@ -52,17 +53,17 @@ Image::~Image()
 {
 }
 
-int Image::GetWidth() const
+int Image::Width() const
 {
 	return width;
 }
 
-int Image::GetHeight() const
+int Image::Height() const
 {
 	return height;
 }
 
-int Image::GetBytesPerPixel() const
+int Image::BytesPerPixel() const
 {
 	return bytesPerPixel;
 }
@@ -105,7 +106,7 @@ vector<double> Image::GetNormilizedDoubleData()
 
 unique_ptr<Matrix2D> Image::GetDoubleMatrix()
 {
-	return make_unique<Matrix2D>(move(GetDoubleData()),GetWidth(),GetHeight());
+	return make_unique<Matrix2D>(move(GetDoubleData()),Width(),Height());
 }
 
 uchar* Image::GetRawData()

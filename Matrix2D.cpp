@@ -51,25 +51,25 @@ void Matrix2D::SetElementAt(int plainIndex, double value)
 	elements[plainIndex] = value;
 }
 
-std::vector<double> Matrix2D::ExtractData()
+std::vector<double> Matrix2D::ExtractData() const
 {
 
 	return elements;
 }
 
-int Matrix2D::GetWidth()
+int Matrix2D::Width() const
 {
 	return width;
 }
 
-int Matrix2D::GetHeight()
+int Matrix2D::Height() const
 {
 	return height;
 }
 
-int Matrix2D::GetTotalElements()
+int Matrix2D::TotalElements()
 {
-	return GetWidth()*GetHeight();
+	return Width()*Height();
 }
 
 Matrix2D::~Matrix2D()
