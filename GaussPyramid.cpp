@@ -33,23 +33,22 @@ void GaussPyramid::AddOctave(unique_ptr<Octave> octave)
 
 double GaussPyramid::L(int x, int y, double sigma)
 {
-	auto level = (int)log2(sigma);
-	auto octave = OctaveAt(level);
+	double pyramidSigma = sigma / sigma0;
+	auto level = (int)log2(pyramidSigma);
+	auto nearestOctave = OctaveAt(level);
 	int effectiveX = (int)(x / pow(2, level));
 	int effectiveY = (int)(y / pow(2, level));
-	double sigmaRest = sigma / pow(2, level);
-	auto layersInOctave = octave.LayersCount() - 1;
+	double sigmaRest = pyramidSigma / pow(2, level);
+	auto layersInOctave = nearestOctave.LayersCount();
 	double scaleInterval = pow(2, 1. / layersInOctave);
-	double levelSigma = 1;
-	double nextSigma = levelSigma*scaleInterval;
-	int desiredLevel = 0;
-	while (!(abs(sigmaRest - levelSigma) < abs(sigmaRest - nextSigma)))
-	{		
-		desiredLevel++;
-		levelSigma = nextSigma;
-		nextSigma = levelSigma * scaleInterval;
-	}
-	return octave.LayerAt(desiredLevel).GetImage().PixelAt(effectiveX, effectiveY);
+	int leftLayer = log(sigmaRest)/log(scaleInterval);
+	int rightLayer = leftLayer+1;
+	double leftSigma = nearestOctave.LayerAt(leftLayer).Sigma();
+	double rightSigma = nearestOctave.LayerAt(rightLayer).Sigma();
+	int nearestLayer;
+	nearestLayer = (abs(sigmaRest - leftSigma) < abs(sigmaRest - rightSigma))?
+		leftLayer:rightLayer;	
+	return nearestOctave.LayerAt(nearestLayer).GetImage().PixelAt(effectiveX, effectiveY);
 }
 
 void GaussPyramid::BuildOctaves(unique_ptr<Matrix2D> firstImage,int octaveCount, int layersInOctave)
@@ -60,7 +59,7 @@ void GaussPyramid::BuildOctaves(unique_ptr<Matrix2D> firstImage,int octaveCount,
 
 		AddOctave(make_unique<Octave>(move(runningImage), layersInOctave, sigma0, i));
 		auto octave = OctaveAt(OctavesCount()-1);		
-		auto lastOctaveImage = octave.LayerAt(octave.LayersCount() - 1).ImageD();
+		auto lastOctaveImage = octave.LayerAt(octave.ImageCount() - 1).ImageD();
 		runningImage = ImageFramework::DownscaleImageTwice(lastOctaveImage);
 	}
 }

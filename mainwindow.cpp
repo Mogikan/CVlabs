@@ -86,7 +86,7 @@ void MainWindow::on_pushButton_4_clicked()
 	for (int i = 0; i < pyramid->OctavesCount(); i++)
 	{
 		auto octave = pyramid->OctaveAt(i);
-		for (int j = 0; j < octave.LayersCount(); j++)
+		for (int j = 0; j < octave.ImageCount(); j++)
 		{
 			auto layer = octave.LayerAt(j);
 			PlatformImageUtils::SaveImage(Image(layer.ImageD()),

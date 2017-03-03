@@ -3,6 +3,7 @@
 
 Octave::Octave(unique_ptr<Matrix2D> firstImage, int layersInOctave, double sigma, int depth)
 {
+	layersCount = layersInOctave;
 	AddLayer(move(make_unique<Layer>(move(firstImage), sigma, depth)));
 	double scaleInterval = pow(2, 1./layersInOctave);
 	double runningSigma = sigma;
@@ -11,7 +12,7 @@ Octave::Octave(unique_ptr<Matrix2D> firstImage, int layersInOctave, double sigma
 		double nextSigma = runningSigma * scaleInterval;
 		double convolutionSigma = sqrt(nextSigma*nextSigma - runningSigma*runningSigma);
 		runningSigma = nextSigma;
-		auto runningImage = LayerAt(LayersCount() - 1).ImageD();
+		auto runningImage = LayerAt(ImageCount() - 1).ImageD();
 		auto nextImage = ImageFramework::ApplyGaussSmooth(runningImage,convolutionSigma);
 		AddLayer(move(make_unique<Layer>(move(nextImage), runningSigma,depth)));
 	}	
@@ -19,6 +20,7 @@ Octave::Octave(unique_ptr<Matrix2D> firstImage, int layersInOctave, double sigma
 
 Octave::Octave(const Octave& octave)
 {
+	this->layersCount = octave.layersCount;
 	layers = vector<unique_ptr<Layer>>();
 	for (const auto& e : octave.layers)
 		AddLayer(make_unique<Layer>(*e));
@@ -27,12 +29,17 @@ Octave::Octave(const Octave& octave)
 void Octave::AddLayer(unique_ptr<Layer> layer)
 {
 	layers.push_back(move(layer));
-	layersCount++;
+	imageCount++;
 }
 
 
-int Octave::LayersCount()
+int Octave::ImageCount() const
 {	
+	return imageCount;
+}
+
+int Octave::LayersCount() const
+{
 	return layersCount;
 }
 
