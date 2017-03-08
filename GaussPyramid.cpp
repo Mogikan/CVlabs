@@ -17,18 +17,17 @@ GaussPyramid::GaussPyramid(
 
 int GaussPyramid::OctavesCount()
 {
-	return octavesCount;
+	return octaves.size();
 }
 
 const Octave & GaussPyramid::OctaveAt(int index)
 {
-	return *octaves[index];
+	return *octaves.at(index);
 }
 
 void GaussPyramid::AddOctave(unique_ptr<Octave> octave)
 {
 	octaves.push_back(move(octave));
-	octavesCount++;
 }
 
 double GaussPyramid::L(int x, int y, double sigma)
@@ -53,6 +52,7 @@ double GaussPyramid::L(int x, int y, double sigma)
 
 void GaussPyramid::BuildOctaves(unique_ptr<Matrix2D> firstImage,int octaveCount, int layersInOctave)
 {
+
 	auto runningImage = move(firstImage);	
 	for (int i = 0; i < octaveCount; i++)
 	{	

@@ -31,12 +31,12 @@ Matrix2D::Matrix2D(const Matrix2D & matrix)
 }
 
 
-double Matrix2D::GetElementAt(int x, int y)
+double Matrix2D::At(int x, int y) const
 {
 	return elements[y*width+x];
 }
 
-double Matrix2D::GetElementAt(int plainIndex)
+double Matrix2D::At(int plainIndex) const
 {
 	return elements[plainIndex];
 }
@@ -70,6 +70,85 @@ int Matrix2D::Height() const
 int Matrix2D::TotalElements()
 {
 	return Width()*Height();
+}
+
+double Matrix2D::GetIntensity(int x, int y, BorderMode borderHandlingMode) const
+{
+	int effectiveX = x;
+	int effectiveY = y;
+	if (x < 0)
+	{
+		switch (borderHandlingMode)
+		{
+		case BorderMode::zero:
+			return 0;
+			break;
+		case BorderMode::extend:
+			effectiveX = 0;
+			break;
+		case BorderMode::mirror:
+			effectiveX = -x - 1;
+			break;
+		case BorderMode::wrap:
+			effectiveX = width + x;
+			break;
+		}
+	}
+	if (y < 0)
+	{
+		switch (borderHandlingMode)
+		{
+		case BorderMode::zero:
+			return 0;
+			break;
+		case BorderMode::extend:
+			effectiveY = 0;
+			break;
+		case BorderMode::mirror:
+			effectiveY = -y - 1;
+			break;
+		case BorderMode::wrap:
+			effectiveY = height + y;
+			break;
+		}
+	}
+	if (x >= width)
+	{
+		switch (borderHandlingMode)
+		{
+		case BorderMode::zero:
+			return 0;
+			break;
+		case BorderMode::extend:
+			effectiveX = width - 1;
+			break;
+		case BorderMode::mirror:
+			effectiveX = width - 1 - (x - width);
+			break;
+		case BorderMode::wrap:
+			effectiveX = x - width;
+			break;
+		}
+	}
+	if (y >= height)
+	{
+		switch (borderHandlingMode)
+		{
+		case BorderMode::zero:
+			return 0;
+			break;
+		case BorderMode::extend:
+			effectiveY = height - 1;
+			break;
+		case BorderMode::mirror:
+			effectiveY = height - 1 - (x - height);
+			break;
+		case BorderMode::wrap:
+			effectiveY = x - height;
+			break;
+		}
+	}
+	return At(effectiveX, effectiveY);
 }
 
 Matrix2D::~Matrix2D()

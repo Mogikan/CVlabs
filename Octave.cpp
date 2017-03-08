@@ -35,7 +35,7 @@ void Octave::AddLayer(unique_ptr<Layer> layer)
 
 int Octave::ImageCount() const
 {	
-	return imageCount;
+	return layers.size();
 }
 
 int Octave::LayersCount() const
@@ -43,7 +43,7 @@ int Octave::LayersCount() const
 	return layersCount;
 }
 
-const Layer& Octave::LayerAt(int index)
+const Layer& Octave::LayerAt(int index) const
 {
 	return *layers.at(index);
 }

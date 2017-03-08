@@ -5,6 +5,7 @@
 #include "ImageFramework.h"
 #include "DebugHelper.h"
 #include "Image.h"
+#include "MoravecPOIDetector.h"
 #include <memory>
 using namespace std;
 MainWindow::MainWindow(QWidget *parent) :
@@ -51,7 +52,7 @@ void MainWindow::on_pushButton_2_clicked()
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
 	auto sobelProcessedImageMatrix = ImageFramework::ApplySobelOperator(*image->GetDoubleMatrix(), BorderMode::zero);
 	auto sobelImage = make_unique<Image>(sobelProcessedImageMatrix->ExtractData(), sobelProcessedImageMatrix->Width(), sobelProcessedImageMatrix->Height());	
-	ShowImage(PlatformImageUtils::QImageFromInternalImage(sobelImage));
+	ShowImage(PlatformImageUtils::QImageFromInternalImage(*sobelImage));
 	
 }
 
@@ -60,7 +61,7 @@ void MainWindow::on_pushButton_3_clicked()
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
 	auto gaussImageMatrix = ImageFramework::ApplyGaussSmooth(*image->GetDoubleMatrix(), 1);
 	auto gaussImage = make_unique<Image>(gaussImageMatrix->ExtractData(), gaussImageMatrix->Width(), gaussImageMatrix->Height());
-	qImage = PlatformImageUtils::QImageFromInternalImage(gaussImage);
+	qImage = PlatformImageUtils::QImageFromInternalImage(*gaussImage);
 	ShowImage(qImage);	
 }
 
@@ -80,17 +81,27 @@ void MainWindow::ShowImage(QImage image)
 void MainWindow::on_pushButton_4_clicked()
 {
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
-	int octaveCount = log2(min(image->Height(),image->Width()));
-	
-	auto pyramid = ImageFramework::BuildGaussPyramid(*image->GetDoubleMatrix(), octaveCount, 3, 1.6, 0.5);
-	for (int i = 0; i < pyramid->OctavesCount(); i++)
+	//int octaveCount = log2(min(image->Height(),image->Width()));
+	//
+	//auto pyramid = ImageFramework::BuildGaussPyramid(*image->GetDoubleMatrix(), octaveCount, 3, 1.6, 0.5);
+	//for (int i = 0; i < pyramid->OctavesCount(); i++)
+	//{
+	//	auto& octave = pyramid->OctaveAt(i);
+	//	for (int j = 0; j < octave.ImageCount(); j++)
+	//	{
+	//		auto& layer = octave.LayerAt(j);
+	//		PlatformImageUtils::SaveImage(Image(layer.ImageD()),
+	//			"C:\\Pyramid\\Octave_" + QString::number(i) + "_Layer_" + QString::number(j) + "_Sigma_" + QString::number(layer.Sigma()) + "_ESigma_" + QString::number(layer.EffectiveSigma()) + ".png");
+	//	}
+	//}
+	MoravecPOIDetector detector;
+	auto& matrix = image->GetNormalizedMatrix();
+	auto points = detector.FindPoints(*matrix);
+	for (int i = 0; i < points.size(); i++)
 	{
-		auto octave = pyramid->OctaveAt(i);
-		for (int j = 0; j < octave.ImageCount(); j++)
-		{
-			auto layer = octave.LayerAt(j);
-			PlatformImageUtils::SaveImage(Image(layer.ImageD()),
-				"C:\\Pyramid\\Octave_" + QString::number(i) + "_Layer_" + QString::number(j) + "_Sigma_" + QString::number(layer.Sigma()) + "_ESigma_" + QString::number(layer.EffectiveSigma()) + ".png");
-		}
+		matrix->SetElementAt(points[i].x, points[i].y, 1);
 	}
+	/*PlatformImageUtils::SaveImage(Image(*matrix), "C:\\moravec.png");*/
+	auto sobelImage = make_unique<Image>(matrix->ExtractData(), matrix->Width(), matrix->Height());
+	ShowImage(PlatformImageUtils::QImageFromInternalImage(*sobelImage));
 }

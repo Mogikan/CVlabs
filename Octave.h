@@ -9,7 +9,7 @@ public:
 	void AddLayer(unique_ptr<Layer> layer);
 	int ImageCount() const;
 	int LayersCount() const;
-	const Layer& LayerAt(int index);
+	const Layer& LayerAt(int index) const;
 private:
 	std::vector<unique_ptr<Layer>> layers;
 	int imageCount=0;

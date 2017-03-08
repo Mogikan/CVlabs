@@ -86,6 +86,12 @@
     <ClCompile Include="Octave.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="POIDetector.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MoravecPOIDetector.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.h">
@@ -137,6 +143,12 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="Octave.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="POIDetector.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MoravecPOIDetector.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -5,9 +5,9 @@ PlatformImageUtils::PlatformImageUtils()
 {
 }
 
-QImage PlatformImageUtils::QImageFromInternalImage(const unique_ptr<Image>& image)
+QImage PlatformImageUtils::QImageFromInternalImage(const Image& image)
 {
-	return QImage(image->GetRawData(),image->Width(),image->Height(), QImage::Format_Grayscale8);
+	return QImage(image.GetRawData(),image.Width(),image.Height(), QImage::Format_Grayscale8);
 }
 
 unique_ptr<Image> PlatformImageUtils::LoadInternalImage(QString qImageFileName)

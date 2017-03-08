@@ -109,12 +109,17 @@ vector<double> Image::GetNormilizedDoubleData()
 	return normalizedData;
 }
 
+unique_ptr<Matrix2D> Image::GetNormalizedMatrix()
+{
+	return make_unique<Matrix2D>(GetNormilizedDoubleData(), Width(), Height());
+}
+
 unique_ptr<Matrix2D> Image::GetDoubleMatrix()
 {
 	return make_unique<Matrix2D>(move(GetDoubleData()),Width(),Height());
 }
 
-uchar* Image::GetRawData()
+uchar* Image::GetRawData() const
 {
 	uchar* result = new uchar[GetTotalBytes()];
 	copy(imageBytes.get(), imageBytes.get() +GetTotalBytes(), result);

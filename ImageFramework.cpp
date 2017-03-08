@@ -9,88 +9,6 @@ ImageFramework::~ImageFramework()
 {
 }
 
-static double GetIntensity(Matrix2D& image, int x, int y, BorderMode borderHandlingMode)
-{
-	int effectiveX = x;
-	int effectiveY = y;
-	int width = image.Width();
-	int height = image.Height();
-	if (x < 0)
-	{
-		switch (borderHandlingMode)
-		{
-		case BorderMode::zero:
-			return 0;
-			break;
-		case BorderMode::extend:
-			effectiveX = 0;
-			break;
-		case BorderMode::mirror:
-			effectiveX = -x - 1;
-			break;
-		case BorderMode::wrap:
-			effectiveX = width + x;
-			break;
-		}
-	}
-	if (y < 0)
-	{
-		switch (borderHandlingMode)
-		{
-		case BorderMode::zero:
-			return 0;
-			break;
-		case BorderMode::extend:
-			effectiveY = 0;
-			break;
-		case BorderMode::mirror:
-			effectiveY = -y - 1;
-			break;
-		case BorderMode::wrap:
-			effectiveY = height + y;
-			break;
-		}
-	}
-	if (x >= width)
-	{
-		switch (borderHandlingMode)
-		{
-		case BorderMode::zero:
-			return 0;
-			break;
-		case BorderMode::extend:
-			effectiveX = width - 1;
-			break;
-		case BorderMode::mirror:
-			effectiveX = width - 1 - (x - width);
-			break;
-		case BorderMode::wrap:
-			effectiveX = x - width;
-			break;
-		}
-	}
-	if (y >= height)
-	{
-		switch (borderHandlingMode)
-		{
-		case BorderMode::zero:
-			return 0;
-			break;
-		case BorderMode::extend:
-			effectiveY = height - 1;
-			break;
-		case BorderMode::mirror:
-			effectiveY = height - 1 - (x - height);
-			break;
-		case BorderMode::wrap:
-			effectiveY = x - height;
-			break;
-		}
-	}
-	return image.GetElementAt(effectiveX, effectiveY);
-}
-
-
 
 unique_ptr<Matrix2D> ImageFramework::Convolve(
 	Matrix2D& originalImageMatrix,
@@ -107,8 +25,8 @@ unique_ptr<Matrix2D> ImageFramework::Convolve(
 			for (int yk = -kernel.Center().y; yk <  kernel.Height() - kernel.Center().y; yk++)
 				for (int xk = -kernel.Center().x; xk < kernel.Width()- kernel.Center().x; xk++)
 				{	
-					double imageIntensity = GetIntensity(originalImageMatrix, x + xk, y + yk, borderHandlingMode);
-					double kernelValue = kernel.GetElementAt(kernel.Center().x-xk, kernel.Center().y - yk);
+					double imageIntensity = originalImageMatrix.GetIntensity(x + xk, y + yk, borderHandlingMode);
+					double kernelValue = kernel.At(kernel.Center().x-xk, kernel.Center().y - yk);
 					convolutionValue += imageIntensity*kernelValue;				
 				}
 			convolutedImageMatrix->SetElementAt(x, y, convolutionValue);
@@ -164,10 +82,10 @@ unique_ptr<Matrix2D> ImageFramework::DownscaleImageTwice(Matrix2D & image)
 		{
 			result->SetElementAt(x, y,
 				(
-					image.GetElementAt(x * 2    , y * 2) +
-					image.GetElementAt(x * 2 + 1, y * 2) +
-					image.GetElementAt(x * 2    , y * 2 + 1) +
-					image.GetElementAt(x * 2 + 1, y * 2 + 1)) / 4
+					image.At(x * 2    , y * 2) +
+					image.At(x * 2 + 1, y * 2) +
+					image.At(x * 2    , y * 2 + 1) +
+					image.At(x * 2 + 1, y * 2 + 1)) / 4
 			);
 		}
 	}

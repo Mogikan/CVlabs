@@ -8,7 +8,7 @@ class PlatformImageUtils
 {
 public:
 	PlatformImageUtils();
-	static QImage QImageFromInternalImage(const unique_ptr<Image>& image);
+	static QImage QImageFromInternalImage(const Image& image);
 	static unique_ptr<Image> LoadInternalImage(QString qImageFileName);	
 	static unique_ptr<Image> ConvertQImageToInternalImage(QImage qImage);	
 	static void SaveImage(Image& image, QString filePath);

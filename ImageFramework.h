@@ -5,7 +5,6 @@
 #include "Kernel.h"
 #include "Matrix2D.h"
 #include "GaussPyramid.h"
-enum BorderMode {wrap, mirror, extend, zero};
 class ImageFramework
 {
 public:

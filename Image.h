@@ -20,13 +20,14 @@ public:
 	int GetTotalBytes() const;	
 	vector<double> GetDoubleData();
 	vector<double> GetNormilizedDoubleData();
+	unique_ptr<Matrix2D> GetNormalizedMatrix();
 	unique_ptr<Matrix2D> GetDoubleMatrix();
-	uchar* GetRawData();
+	uchar* GetRawData() const;
 	void NormalizeImage();
 private:	
 	unique_ptr<uchar[]> imageBytes;
 	int width;
 	int height;
-	int bytesPerPixel;
+	int bytesPerPixel;	
 };
 
