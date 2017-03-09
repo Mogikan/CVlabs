@@ -9,5 +9,6 @@ public:
 	virtual unique_ptr<Matrix2D> BuildHeatMap(Matrix2D & image) override;
 protected:
 	virtual double Threshold() override { return 0.05; };
+	
 };
 

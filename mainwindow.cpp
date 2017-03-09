@@ -6,6 +6,7 @@
 #include "DebugHelper.h"
 #include "Image.h"
 #include "MoravecPOIDetector.h"
+#include "HarrisPOIDetector.h"
 #include <memory>
 using namespace std;
 MainWindow::MainWindow(QWidget *parent) :
@@ -94,14 +95,14 @@ void MainWindow::on_pushButton_4_clicked()
 	//			"C:\\Pyramid\\Octave_" + QString::number(i) + "_Layer_" + QString::number(j) + "_Sigma_" + QString::number(layer.Sigma()) + "_ESigma_" + QString::number(layer.EffectiveSigma()) + ".png");
 	//	}
 	//}
-	MoravecPOIDetector detector;
+	HarrisPOIDetector detector;
 	auto& matrix = image->GetNormalizedMatrix();
-	auto points = detector.FindPoints(*matrix);
+	auto points = detector.FindPoints(*matrix,true,100);
 	for (int i = 0; i < points.size(); i++)
 	{
 		matrix->SetElementAt(points[i].x, points[i].y, 1);
 	}
-	/*PlatformImageUtils::SaveImage(Image(*matrix), "C:\\moravec.png");*/
-	auto sobelImage = make_unique<Image>(matrix->ExtractData(), matrix->Width(), matrix->Height());
-	ShowImage(PlatformImageUtils::QImageFromInternalImage(*sobelImage));
+	//PlatformImageUtils::SaveImage(Image(*matrix), "C:\\harris.png");
+	//auto sobelImage = make_unique<Image>(matrix->ExtractData(), matrix->Width(), matrix->Height());
+	//ShowImage(PlatformImageUtils::QImageFromInternalImage(*sobelImage));
 }

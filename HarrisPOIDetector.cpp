@@ -40,7 +40,7 @@ unique_ptr<Matrix2D> HarrisPOIDetector::BuildHeatMap(Matrix2D & image)
 			minContrastMatrix->SetElementAt(x, y, lambdaMin);
 		}
 	}
-	PlatformImageUtils::SaveImage(Image(*minContrastMatrix), "C:\\harrisLambdas.png");
+	//PlatformImageUtils::SaveImage(Image(*minContrastMatrix), "C:\\harrisLambdas.png");
 	return move(minContrastMatrix);
 }
 

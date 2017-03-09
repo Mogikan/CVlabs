@@ -43,7 +43,7 @@ unique_ptr<Matrix2D> MoravecPOIDetector::BuildHeatMap(Matrix2D & image)
 			minContrastMatrix->SetElementAt(x, y, minContrast);
 		}
 	}
-	PlatformImageUtils::SaveImage(Image(*minContrastMatrix), "C:\\moravecContrast.png");
+	//PlatformImageUtils::SaveImage(Image(*minContrastMatrix), "C:\\moravecContrast.png");
 	return move(minContrastMatrix);
 }
 
