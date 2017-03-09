@@ -6,6 +6,17 @@ class POIDetector
 {
 public:
 	POIDetector();
-	virtual vector<Point> FindPoints(const Matrix2D& image)=0;
+	~POIDetector();
+	vector<Point> FindPoints(Matrix2D& image);
+protected:
+	virtual unique_ptr<Matrix2D> BuildHeatMap(Matrix2D& image)= 0;
+
+	virtual double Threshold() = 0;
+	double HalfWindowSize() { return windowSize / 2;}	
+	vector<Point> ChoosePeaks(Matrix2D& contrastMatrix);
+private:
+	double const windowSize = 7;
+	double const localWindowSize = 7;
+	bool CheckPointSuits(const Matrix2D& image,int x, int y);
 };
 

@@ -6,10 +6,9 @@ MoravecPOIDetector::MoravecPOIDetector()
 {
 }
 
-vector<Point> MoravecPOIDetector::FindPoints(const Matrix2D & image)
-{
-	vector<Point> result;
-	Matrix2D minContrastMatrix(image.Width(), image.Height());
+unique_ptr<Matrix2D> MoravecPOIDetector::BuildHeatMap(Matrix2D & image)
+{	
+	auto minContrastMatrix = make_unique<Matrix2D>(image.Width(), image.Height());
 	for (int y = 0; y < image.Height();y++)
 	{
 		for (int x = 0; x < image.Width();x++)
@@ -23,13 +22,12 @@ vector<Point> MoravecPOIDetector::FindPoints(const Matrix2D & image)
 						continue;
 					int shiftedX = x + shift*shiftDirectionX;
 					int shiftedY = y + shift*shiftDirectionY;
-					int windowHalfSize = windowSize / 2;
+					int windowHalfSize = HalfWindowSize();
 					double currentContrast = 0;
 					for (int windowY = -windowHalfSize;windowY <= windowHalfSize;windowY++)
 					{
 						for (int windowX = -windowHalfSize;windowX <= windowHalfSize;windowX++)
-						{
-						
+						{						
 							int pixelX = x + windowX;
 							int pixelY = y + windowY;
 							int shiftedPixelX = shiftedX + windowX;
@@ -42,42 +40,10 @@ vector<Point> MoravecPOIDetector::FindPoints(const Matrix2D & image)
 						 minContrast = currentContrast;
 				}
 			}
-			minContrastMatrix.SetElementAt(x, y, minContrast);
+			minContrastMatrix->SetElementAt(x, y, minContrast);
 		}
 	}
-	PlatformImageUtils::SaveImage(Image(minContrastMatrix), "C:\\diff.png");
-	for (int y = 0; y < minContrastMatrix.Height(); y++)
-	{
-		for (int x = 0; x < minContrastMatrix.Width(); x++)
-		{
-			int localMaxWindowHalf = localWindowSize / 2;
-			auto currentIntensity = minContrastMatrix.GetIntensity(x, y);
-			if (currentIntensity > threshold) {
-				bool pointSuits = true;
-				for (int dy = -localMaxWindowHalf; dy <= localMaxWindowHalf; dy++)
-				{
-					for (int dx = -localMaxWindowHalf; dx <= localMaxWindowHalf; dx++)
-					{
-						if (dx == 0 && dy == 0)
-							continue;
-						if (currentIntensity <= minContrastMatrix.GetIntensity(x + dx, y + dy))
-						{
-							pointSuits = false;
-							break;
-						}
-					}
-					if (!pointSuits)
-					{
-						break;
-					}
-				}
-				if (pointSuits)
-				{
-					result.push_back(Point(x, y));
-				}
-			}
-		}
-	}
-	return result;
+	PlatformImageUtils::SaveImage(Image(*minContrastMatrix), "C:\\moravecContrast.png");
+	return move(minContrastMatrix);
 }
 

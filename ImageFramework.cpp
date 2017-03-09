@@ -34,6 +34,8 @@ unique_ptr<Matrix2D> ImageFramework::Convolve(
 	return move(convolutedImageMatrix);
 }
 
+
+
 unique_ptr<Matrix2D> ImageFramework::ApplySobelOperator(Matrix2D& originalImage, BorderMode borderHandlingMode)
 {
 	auto sobelXImage = Convolve(originalImage, Kernel::GetSobelX(), borderHandlingMode);
@@ -54,6 +56,16 @@ unique_ptr<Matrix2D> ImageFramework::ApplySobelOperator(Matrix2D& originalImage,
 		return sqrt(sx*sx + sy*sy);
 	});
 	return make_unique<Matrix2D>(sobelOperatorResult, width, height);
+}
+
+unique_ptr<Matrix2D> ImageFramework::ApplySobelX(Matrix2D & originalImage, BorderMode borderHandlingMode)
+{
+	return Convolve(originalImage, Kernel::GetSobelX(), borderHandlingMode);
+}
+
+unique_ptr<Matrix2D> ImageFramework::ApplySobelY(Matrix2D & originalImage, BorderMode borderHandlingMode) 
+{
+	return Convolve(originalImage, Kernel::GetSobelY(), borderHandlingMode);;
 }
 
 unique_ptr<Matrix2D> ImageFramework::ApplyGaussSmooth(Matrix2D& image, double sigma)

@@ -3,13 +3,12 @@
 class MoravecPOIDetector:public POIDetector 
 {
 public:
-	MoravecPOIDetector();
-	virtual vector<Point> FindPoints(const Matrix2D & image) override;
+	MoravecPOIDetector();	
+protected:
+	virtual double Threshold() override { return 0.001; };
+	virtual unique_ptr<Matrix2D> BuildHeatMap(Matrix2D & image) override;
 private:
-	double const shift = 1;
-	double const windowSize = 7;
-	double const localWindowSize = 7;
-	double const threshold = 0.05;
+	double const shift = 1;		
 	BorderMode const borderMode = BorderMode::extend;
 	// Inherited via POIDetector
 	
