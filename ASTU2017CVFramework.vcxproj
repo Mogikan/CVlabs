@@ -146,13 +146,11 @@
     <ClCompile Include="GeneratedFiles\Release\moc_mainwindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="HarrisPOIDetector.cpp" />
     <ClCompile Include="ImageFramework.cpp" />
     <ClCompile Include="Kernel.cpp" />
     <ClCompile Include="Layer.cpp" />
     <ClCompile Include="MathHelper.cpp" />
     <ClCompile Include="Matrix2D.cpp" />
-    <ClCompile Include="MoravecPOIDetector.cpp" />
     <ClCompile Include="Octave.cpp" />
     <ClCompile Include="PlatformImageUtils.cpp" />
     <ClCompile Include="main.cpp" />
@@ -164,13 +162,11 @@
     <ClInclude Include="DebugHelper.h" />
     <ClInclude Include="GaussPyramid.h" />
     <ClInclude Include="GeneratedFiles\ui_mainwindow.h" />
-    <ClInclude Include="HarrisPOIDetector.h" />
     <ClInclude Include="ImageFramework.h" />
     <ClInclude Include="Kernel.h" />
     <ClInclude Include="Layer.h" />
     <ClInclude Include="MathHelper.h" />
     <ClInclude Include="Matrix2D.h" />
-    <ClInclude Include="MoravecPOIDetector.h" />
     <ClInclude Include="Octave.h" />
     <ClInclude Include="PlatformImageUtils.h" />
     <ClInclude Include="Image.h" />

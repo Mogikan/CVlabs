@@ -1,9 +1,22 @@
 #include "POIDetector.h"
 #include "ImageFramework.h"
+#include "MathHelper.h"
 
-
-POIDetector::POIDetector()
+POIDetector::POIDetector(POISearchMethod searchType)
 {
+	switch (searchType)
+	{
+	case POISearchMethod::Harris:
+		threshold = 0.05;
+		heatMapImplementation = [&](Matrix2D & image) {return BuildHeatMapHarris(image); };
+		break;
+	case POISearchMethod::Moravec:
+		threshold = 0.001;
+		heatMapImplementation = [&](Matrix2D & image) {return BuildHeatMapMoravec(image); };
+		break;
+	default:
+		break;
+	}
 }
 
 POIDetector::~POIDetector()
@@ -13,7 +26,7 @@ POIDetector::~POIDetector()
 vector<Point> POIDetector::FindPoints(Matrix2D & image, bool suppressNonMaximum,int leftPointCount)
 {
 	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
-	auto specialPointsHeatMap = BuildHeatMap(*smothedImage);
+	auto specialPointsHeatMap = heatMapImplementation(*smothedImage);
 	auto foundPoints = ChoosePeaks(*specialPointsHeatMap);
 	if (suppressNonMaximum)
 	{
@@ -27,6 +40,86 @@ vector<Point> POIDetector::FindPoints(Matrix2D & image, bool suppressNonMaximum,
 
 }
 
+unique_ptr<Matrix2D> POIDetector::BuildHeatMapMoravec(Matrix2D & image)
+{
+	double const shift = 1;
+	auto minContrastMatrix = make_unique<Matrix2D>(image.Width(), image.Height());
+	for (int y = 0; y < image.Height(); y++)
+	{
+		for (int x = 0; x < image.Width(); x++)
+		{
+			double minContrast = DBL_MAX;
+			for (int shiftDirectionX = -1; shiftDirectionX <= 1; shiftDirectionX++)
+			{
+				for (int shiftDirectionY = -1; shiftDirectionY <= 1; shiftDirectionY++)
+				{
+					if (shiftDirectionX == 0 && shiftDirectionY == 0)
+						continue;
+					int shiftedX = x + shift*shiftDirectionX;
+					int shiftedY = y + shift*shiftDirectionY;
+					int windowHalfSize = HalfWindowSize();
+					double currentContrast = 0;
+					for (int windowY = -windowHalfSize; windowY <= windowHalfSize; windowY++)
+					{
+						for (int windowX = -windowHalfSize; windowX <= windowHalfSize; windowX++)
+						{
+							int pixelX = x + windowX;
+							int pixelY = y + windowY;
+							int shiftedPixelX = shiftedX + windowX;
+							int shiftedPixelY = shiftedY + windowY;
+							double difference = 
+								image.GetIntensity(pixelX, pixelY) 
+								- image.GetIntensity(shiftedPixelX, shiftedPixelY);
+							currentContrast += difference*difference;
+						}
+					}
+					if (currentContrast < minContrast)
+						minContrast = currentContrast;
+				}
+			}
+			minContrastMatrix->SetElementAt(x, y, minContrast);
+		}
+	}
+	//PlatformImageUtils::SaveImage(Image(*minContrastMatrix), "C:\\moravecContrast.png");
+	return move(minContrastMatrix);
+}
+unique_ptr<Matrix2D> POIDetector::BuildHeatMapHarris(Matrix2D & image)
+{
+	auto dx = ImageFramework::ApplySobelX(image);
+	auto dy = ImageFramework::ApplySobelY(image);
+	auto minContrastMatrix = make_unique<Matrix2D>(image.Width(), image.Height());
+	for (int y = 0; y < image.Height(); y++)
+	{
+		for (int x = 0; x < image.Width(); x++)
+		{
+			Matrix2D H(2, 2);
+			double a = 0;
+			double b = 0;
+			double c = 0;
+			for (int shiftY = -HalfWindowSize(); shiftY <= HalfWindowSize(); shiftY++)
+			{
+				for (int shiftX = -HalfWindowSize(); shiftX <= HalfWindowSize(); shiftX++)
+				{
+					double Ix = dx->GetIntensity(x + shiftX, y + shiftY);
+					double Iy = dy->GetIntensity(x + shiftX, y + shiftY);
+					a += Ix*Ix;
+					b += Ix*Iy;
+					c += Iy*Iy;
+				}
+			}
+			H.SetElementAt(0, 0, a);
+			H.SetElementAt(0, 1, b);
+			H.SetElementAt(1, 0, b);
+			H.SetElementAt(1, 1, c);
+			auto eigenvalues = MathHelper::Eigenvalues(H);
+			auto lambdaMin = min(eigenvalues.first, eigenvalues.second);
+			minContrastMatrix->SetElementAt(x, y, lambdaMin);
+		}
+	}
+	//PlatformImageUtils::SaveImage(Image(*minContrastMatrix), "C:\\harrisLambdas.png");
+	return move(minContrastMatrix);
+}
+
 vector<Point> POIDetector::ChoosePeaks(Matrix2D & contrastMatrix)
 {
 	vector<Point> result;
@@ -36,7 +129,7 @@ vector<Point> POIDetector::ChoosePeaks(Matrix2D & contrastMatrix)
 		{
 			
 			auto currentIntensity = contrastMatrix.GetIntensity(x, y);
-			if (currentIntensity > Threshold()) 
+			if (currentIntensity > threshold) 
 			{
 				if (CheckPointSuits(contrastMatrix, x, y))
 				{
@@ -80,34 +173,38 @@ double DistanceSQR(Point first, Point second)
 	return diffX*diffX + diffY*diffY;
 }
 
-vector<Point> POIDetector::SuppressNonMaximum(Matrix2D & heatMap, vector<Point> foundPoints,int leftPointsCount)
+vector<Point> POIDetector::SuppressNonMaximum(
+	Matrix2D & heatMap, 
+	vector<Point> foundPoints,
+	int leftPointsCount
+)
 {
 	vector<Point> result = foundPoints;
 	double r = 0;
 	while (result.size()>leftPointsCount)
 	{
-		for (int firstPointIndex = 0; firstPointIndex < result.size(); firstPointIndex++)
+		for (int point1Index = 0; point1Index < result.size(); point1Index++)
 		{
-			for (int secondPointIndex = firstPointIndex+1; secondPointIndex < result.size(); secondPointIndex++)
+			for (int point2Index = point1Index+1; point2Index < result.size(); point2Index++)
 			{
-				if (secondPointIndex == firstPointIndex)
+				if (point2Index == point1Index)
 				{
 					continue;
 				}
-				auto firstPoint = result[firstPointIndex];
-				auto secondPoint = result[secondPointIndex];
+				auto firstPoint = result[point1Index];
+				auto secondPoint = result[point2Index];
 				if (DistanceSQR(firstPoint, secondPoint) < r*r)
 				{
 					if (heatMap.At(firstPoint.x, firstPoint.y) > heatMap.At(secondPoint.x, secondPoint.y))
 					{
-						result.erase(result.begin() + secondPointIndex);
-						secondPointIndex = (secondPointIndex>0)? secondPointIndex--:0;
+						result.erase(result.begin() + point2Index);
+						point2Index = (point2Index>0)? point2Index--:0;
 					}
 					else 
 					{
-						result.erase(result.begin()+ firstPointIndex);
-						firstPointIndex = (firstPointIndex>0)?firstPointIndex--:0;
-						secondPointIndex = firstPointIndex + 1;
+						result.erase(result.begin()+ point1Index);
+						point1Index = (point1Index>0)?point1Index--:0;
+						point2Index = point1Index + 1;
 					}					
 				}
 			}

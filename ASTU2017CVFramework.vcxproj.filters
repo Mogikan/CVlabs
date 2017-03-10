@@ -89,13 +89,7 @@
     <ClCompile Include="POIDetector.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="MoravecPOIDetector.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="MathHelper.cpp">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HarrisPOIDetector.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -154,13 +148,7 @@
     <ClInclude Include="POIDetector.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="MoravecPOIDetector.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="MathHelper.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HarrisPOIDetector.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

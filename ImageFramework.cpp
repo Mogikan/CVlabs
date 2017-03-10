@@ -104,6 +104,11 @@ unique_ptr<Matrix2D> ImageFramework::DownscaleImageTwice(Matrix2D & image)
 	return result;
 }
 
+POIDetector ImageFramework::CreatePOIDetector(POISearchMethod searchMethod)
+{
+	return POIDetector(searchMethod);
+}
+
 
 
 unique_ptr<GaussPyramid> ImageFramework::BuildGaussPyramid(

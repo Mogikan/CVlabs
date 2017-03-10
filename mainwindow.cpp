@@ -5,8 +5,7 @@
 #include "ImageFramework.h"
 #include "DebugHelper.h"
 #include "Image.h"
-#include "MoravecPOIDetector.h"
-#include "HarrisPOIDetector.h"
+#include "POIDetector.h"
 #include <memory>
 using namespace std;
 MainWindow::MainWindow(QWidget *parent) :
@@ -53,7 +52,7 @@ void MainWindow::on_pushButton_3_clicked()
 {
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
 
-	MoravecPOIDetector detector;
+	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Moravec);
 	auto& matrix = image->GetNormalizedMatrix();
 	auto points = detector.FindPoints(*matrix, true, 300);
 	for (int i = 0; i < points.size(); i++)
@@ -81,7 +80,7 @@ void MainWindow::on_pushButton_4_clicked()
 {
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
 	
-	HarrisPOIDetector detector;
+	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
 	auto& matrix = image->GetNormalizedMatrix();
 	auto points = detector.FindPoints(*matrix,true,300);
 	for (int i = 0; i < points.size(); i++)

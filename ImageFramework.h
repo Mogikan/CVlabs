@@ -5,6 +5,7 @@
 #include "Kernel.h"
 #include "Matrix2D.h"
 #include "GaussPyramid.h"
+#include "POIDetector.h"
 class ImageFramework
 {
 public:
@@ -16,6 +17,7 @@ public:
 	static unique_ptr<Matrix2D> ApplySobelY(Matrix2D& originalImage, BorderMode borderHandlingMode = BorderMode::extend);
 	static unique_ptr<Matrix2D> ApplyGaussSmooth(Matrix2D& image,double sigma);
 	static unique_ptr<Matrix2D> DownscaleImageTwice(Matrix2D& image);
+	static POIDetector CreatePOIDetector(POISearchMethod searchMethod);
 	static unique_ptr<GaussPyramid> BuildGaussPyramid(Matrix2D& matrix,
 		int octaveCount, 
 		int octaveLayersCount,
