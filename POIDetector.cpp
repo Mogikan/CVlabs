@@ -26,7 +26,7 @@ POIDetector::~POIDetector()
 vector<Point> POIDetector::FindPoints(Matrix2D & image, bool suppressNonMaximum,int leftPointCount)
 {
 	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
-	auto specialPointsOperatorValuesS = operatorValuesProcessor(*smothedImage);
+	auto specialPointsOperatorValues = operatorValuesProcessor(*smothedImage);
 	auto foundPoints = ChoosePeaks(specialPointsOperatorValues);
 	if (suppressNonMaximum)
 	{
