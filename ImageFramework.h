@@ -6,12 +6,13 @@
 #include "Matrix2D.h"
 #include "GaussPyramid.h"
 #include "POIDetector.h"
+#include "Descriptor.h"
 class ImageFramework
 {
 public:
 	ImageFramework();
 	~ImageFramework();
-	static unique_ptr<Matrix2D> Convolve(Matrix2D& originalImage,Kernel& kernel,BorderMode borderMode);
+	static unique_ptr<Matrix2D> Convolve(Matrix2D& originalImage,Kernel& kernel,BorderMode borderMode = BorderMode::extend);
 	static unique_ptr<Matrix2D> ApplySobelOperator(Matrix2D& originalImage, BorderMode borderMode);
 	static unique_ptr<Matrix2D> ApplySobelX(Matrix2D& originalImage, BorderMode borderHandlingMode = BorderMode::extend);
 	static unique_ptr<Matrix2D> ApplySobelY(Matrix2D& originalImage, BorderMode borderHandlingMode = BorderMode::extend);

@@ -8,11 +8,11 @@ POIDetector::POIDetector(POISearchMethod searchType)
 	{
 	case POISearchMethod::Harris:
 		threshold = 0.05;
-		heatMapImplementation = [&](Matrix2D & image) {return BuildHeatMapHarris(image); };
+		operatorValuesProcessor = [&](Matrix2D & image) {return BuildHarrisOperatorValues(image); };
 		break;
 	case POISearchMethod::Moravec:
 		threshold = 0.001;
-		heatMapImplementation = [&](Matrix2D & image) {return BuildHeatMapMoravec(image); };
+		operatorValuesProcessor = [&](Matrix2D & image) {return BuildMoravecOperatorValues(image); };
 		break;
 	default:
 		break;
@@ -26,8 +26,8 @@ POIDetector::~POIDetector()
 vector<Point> POIDetector::FindPoints(Matrix2D & image, bool suppressNonMaximum,int leftPointCount)
 {
 	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
-	auto specialPointsHeatMap = heatMapImplementation(*smothedImage);
-	auto foundPoints = ChoosePeaks(*specialPointsHeatMap);
+	auto specialPointsOperatorValuesS = operatorValuesProcessor(*smothedImage);
+	auto foundPoints = ChoosePeaks(specialPointsOperatorValues);
 	if (suppressNonMaximum)
 	{
 		auto filteredPoints = SuppressNonMaximum(image, foundPoints, leftPointCount);
@@ -40,10 +40,10 @@ vector<Point> POIDetector::FindPoints(Matrix2D & image, bool suppressNonMaximum,
 
 }
 
-unique_ptr<Matrix2D> POIDetector::BuildHeatMapMoravec(Matrix2D & image)
+Matrix2D POIDetector::BuildMoravecOperatorValues(Matrix2D & image)
 {
 	double const shift = 1;
-	auto minContrastMatrix = make_unique<Matrix2D>(image.Width(), image.Height());
+	auto minContrastMatrix = Matrix2D(image.Width(), image.Height());
 	for (int y = 0; y < image.Height(); y++)
 	{
 		for (int x = 0; x < image.Width(); x++)
@@ -77,17 +77,17 @@ unique_ptr<Matrix2D> POIDetector::BuildHeatMapMoravec(Matrix2D & image)
 						minContrast = currentContrast;
 				}
 			}
-			minContrastMatrix->SetElementAt(x, y, minContrast);
+			minContrastMatrix.SetElementAt(x, y, minContrast);
 		}
 	}
 	//PlatformImageUtils::SaveImage(Image(*minContrastMatrix), "C:\\moravecContrast.png");
-	return move(minContrastMatrix);
+	return minContrastMatrix;
 }
-unique_ptr<Matrix2D> POIDetector::BuildHeatMapHarris(Matrix2D & image)
+Matrix2D POIDetector::BuildHarrisOperatorValues(Matrix2D & image)
 {
 	auto dx = ImageFramework::ApplySobelX(image);
 	auto dy = ImageFramework::ApplySobelY(image);
-	auto minContrastMatrix = make_unique<Matrix2D>(image.Width(), image.Height());
+	auto minContrastMatrix = Matrix2D(image.Width(), image.Height());
 	for (int y = 0; y < image.Height(); y++)
 	{
 		for (int x = 0; x < image.Width(); x++)
@@ -113,11 +113,11 @@ unique_ptr<Matrix2D> POIDetector::BuildHeatMapHarris(Matrix2D & image)
 			H.SetElementAt(1, 1, c);
 			auto eigenvalues = MathHelper::Eigenvalues(H);
 			auto lambdaMin = min(eigenvalues.first, eigenvalues.second);
-			minContrastMatrix->SetElementAt(x, y, lambdaMin);
+			minContrastMatrix.SetElementAt(x, y, lambdaMin);
 		}
 	}
 	//PlatformImageUtils::SaveImage(Image(*minContrastMatrix), "C:\\harrisLambdas.png");
-	return move(minContrastMatrix);
+	return minContrastMatrix;
 }
 
 vector<Point> POIDetector::ChoosePeaks(Matrix2D & contrastMatrix)
@@ -145,7 +145,6 @@ bool POIDetector::CheckPointSuits(const Matrix2D& image, int x, int y)
 {
 	int localMaxWindowHalf = localWindowSize / 2;
 	double currentIntensity = image.GetIntensity(x,y);
-	bool pointSuits = true;
 	for (int dy = -localMaxWindowHalf; dy <= localMaxWindowHalf; dy++)
 	{
 		for (int dx = -localMaxWindowHalf; dx <= localMaxWindowHalf; dx++)
@@ -154,16 +153,11 @@ bool POIDetector::CheckPointSuits(const Matrix2D& image, int x, int y)
 				continue;
 			if (currentIntensity <= image.GetIntensity(x + dx, y + dy))
 			{
-				pointSuits = false;
-				break;
+				return false;				
 			}
-		}
-		if (!pointSuits)
-		{
-			break;
-		}
+		}		
 	}
-	return pointSuits;
+	return true;
 }
 
 double DistanceSQR(Point first, Point second)
@@ -195,10 +189,10 @@ vector<Point> POIDetector::SuppressNonMaximum(
 				auto secondPoint = result[point2Index];
 				if (DistanceSQR(firstPoint, secondPoint) < r*r)
 				{
-					if (heatMap.At(firstPoint.x, firstPoint.y) > heatMap.At(secondPoint.x, secondPoint.y))
+					if (heatMap.At(firstPoint.x, firstPoint.y) > EqualityFactor * heatMap.At(secondPoint.x, secondPoint.y))
 					{
 						result.erase(result.begin() + point2Index);
-						point2Index = (point2Index>0)? point2Index--:0;
+						point2Index--;
 					}
 					else 
 					{

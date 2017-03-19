@@ -92,6 +92,12 @@
     <ClCompile Include="MathHelper.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="Descriptor.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorService.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.h">
@@ -149,6 +155,12 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="MathHelper.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Descriptor.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorService.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

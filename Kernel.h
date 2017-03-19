@@ -15,6 +15,8 @@ public:
 	Point Center();
 	static Kernel GetSobelX();
 	static Kernel GetSobelY();
+	static Kernel GetDerivativeX();
+	static Kernel GetDerivativeY();
 
 	static unique_ptr<Kernel> BuildGaussX(double sigma);
 	static unique_ptr<Kernel> BuildGaussY(double sigma);

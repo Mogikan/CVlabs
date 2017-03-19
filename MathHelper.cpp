@@ -1,12 +1,12 @@
 #include "MathHelper.h"
-
+using namespace std;
 
 
 MathHelper::MathHelper()
 {
 }
 
-std::pair<double, double> MathHelper::Eigenvalues(Matrix2D & matrix)
+pair<double, double> MathHelper::Eigenvalues(Matrix2D & matrix)
 {
 	if (!(matrix.Width() == 2 && matrix.Height() == 2))
 	{
@@ -21,7 +21,7 @@ std::pair<double, double> MathHelper::Eigenvalues(Matrix2D & matrix)
 	double determinant = b*b - 4 * a*c;
 	double lambda1 = (-b + sqrt(determinant)) / (2 * a);
 	double lambda2 = (-b - sqrt(determinant)) / (2 * a);
-	return std::pair<double, double>(lambda1, lambda2);
+	return{ lambda1, lambda2 };
 }
 
 

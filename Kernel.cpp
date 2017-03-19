@@ -80,12 +80,22 @@ Kernel Kernel::GetSobelX()
 Kernel Kernel::GetSobelY()
 {
 	double sobelYKernelValues[]{
-		-1,-2,-1,
-		0,0,0,
 		1,2,1,
+		0,0,0,
+		-1,-2,-1,
 
 	};
 	Kernel sobelY(sobelYKernelValues, 3, 3, Point(1, 1));
 	return sobelY;
+}
+
+Kernel Kernel::GetDerivativeX()
+{
+	return Kernel({1, 0 , -1},3,1,Point(1,0));
+}
+
+Kernel Kernel::GetDerivativeY()
+{
+	return Kernel({1, 0 , -1},1,3,Point(0,1));
 }
 
