@@ -3,6 +3,7 @@
 #include <memory>
 #include <QtGui>
 #include "Image.h"
+#include "Point.h"
 using namespace std;
 class PlatformImageUtils
 {
@@ -12,6 +13,7 @@ public:
 	static unique_ptr<Image> LoadInternalImage(QString qImageFileName);	
 	static unique_ptr<Image> ConvertQImageToInternalImage(QImage qImage);	
 	static void SaveImage(Image& image, QString filePath);
+	static QImage DrawImage(Image& image, vector<pair<Point, Point>> matches, int secondImageXShift);
 	static QImage LoadQImageFromFile(QString filePath);
 private:
 	

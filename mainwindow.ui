@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>890</width>
+    <width>1038</width>
     <height>628</height>
    </rect>
   </property>
@@ -17,14 +17,14 @@
    <widget class="QPushButton" name="pushButton">
     <property name="geometry">
      <rect>
-      <x>770</x>
+      <x>930</x>
       <y>0</y>
       <width>111</width>
       <height>21</height>
      </rect>
     </property>
     <property name="text">
-     <string>Load Image</string>
+     <string>Load Image 1</string>
     </property>
    </widget>
    <widget class="QWidget" name="gridLayoutWidget">
@@ -32,7 +32,7 @@
      <rect>
       <x>0</x>
       <y>0</y>
-      <width>761</width>
+      <width>911</width>
       <height>581</height>
      </rect>
     </property>
@@ -45,27 +45,40 @@
    <widget class="QPushButton" name="pushButton_3">
     <property name="geometry">
      <rect>
-      <x>770</x>
-      <y>60</y>
+      <x>930</x>
+      <y>20</y>
       <width>111</width>
       <height>21</height>
      </rect>
     </property>
     <property name="text">
-     <string>Moravec</string>
+     <string>Load Image 2</string>
     </property>
    </widget>
    <widget class="QPushButton" name="pushButton_4">
     <property name="geometry">
      <rect>
-      <x>770</x>
-      <y>90</y>
-      <width>111</width>
+      <x>910</x>
+      <y>50</y>
+      <width>131</width>
       <height>23</height>
      </rect>
     </property>
     <property name="text">
-     <string>Harris</string>
+     <string>Gradient Value Match</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pushButton_5">
+    <property name="geometry">
+     <rect>
+      <x>910</x>
+      <y>80</y>
+      <width>131</width>
+      <height>21</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Gradient Direction Match</string>
     </property>
    </widget>
   </widget>
@@ -74,7 +87,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>890</width>
+     <width>1038</width>
      <height>21</height>
     </rect>
    </property>

@@ -1,5 +1,4 @@
-#ifndef MAINWINDOW_H
-#define MAINWINDOW_H
+#pragma once;
 #include <QtGui>
 #include <QMainWindow>
 namespace Ui {
@@ -22,11 +21,13 @@ private slots:
 
     void on_pushButton_4_clicked();
 
+    void on_pushButton_5_clicked();
+
 private:
     Ui::MainWindow *ui;
 	QGraphicsScene *scene;
 	QImage qImage;	
+    QImage qImage2;
 	void ShowImage(QImage image);
 };
 
-#endif // MAINWINDOW_H

@@ -168,7 +168,7 @@ double DistanceSQR(Point first, Point second)
 }
 
 vector<Point> POIDetector::SuppressNonMaximum(
-	Matrix2D & heatMap, 
+	Matrix2D & operatorValues, 
 	vector<Point> foundPoints,
 	int leftPointsCount
 )
@@ -189,7 +189,7 @@ vector<Point> POIDetector::SuppressNonMaximum(
 				auto secondPoint = result[point2Index];
 				if (DistanceSQR(firstPoint, secondPoint) < r*r)
 				{
-					if (heatMap.At(firstPoint.x, firstPoint.y) > EqualityFactor * heatMap.At(secondPoint.x, secondPoint.y))
+					if (operatorValues.At(firstPoint.x, firstPoint.y) > EqualityFactor * operatorValues.At(secondPoint.x, secondPoint.y))
 					{
 						result.erase(result.begin() + point2Index);
 						point2Index--;

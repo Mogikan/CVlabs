@@ -76,7 +76,9 @@ Descriptor DescriptorService::BuildGradientDirectionDescriptor(Matrix2D& dxImage
 			double dx = dxImage.GetIntensity(imageX, imageY);
 			double dy = dyImage.GetIntensity(imageX, imageY);
 			double derivativeLength = sqrt(dx*dx + dy*dy);
-			double fi = atan(dy / dx);
+			double fi = atan2(dy, dx);
+			if (fi < 0)
+				fi = 2 * M_PI + fi;
 			int firstNearestBucket = (int)(fi / bucketAngleStep);			
 			double firstBucketCenter = firstNearestBucket*bucketAngleStep + halfBucketAngleStep;
 			double firstBucketValuePart = 1 - abs(fi - firstBucketCenter)/bucketAngleStep;
@@ -117,43 +119,76 @@ double DescriptorService::CalculateDistance(Descriptor descriptor1, Descriptor d
 	return sqrt(distance);
 }
 
+struct MinimumResult 
+{
+	MinimumResult(double firstMinimum,int firstMinimumIndex, double secondMinimum, int secondMinimumIndex):
+		firstMinimum(firstMinimum),
+		firstMinimumIndex(firstMinimumIndex),
+		secondMinimum(secondMinimum),
+		secondMinimumIndex(secondMinimumIndex)
+	{
+	}
+	double firstMinimum;
+	int firstMinimumIndex;
+	double secondMinimum;
+	int secondMinimumIndex;
+};
+
+MinimumResult FindTwoMinimums(Descriptor descriptor, vector<Descriptor> descriptors)
+{
+	double firstMinimum = DBL_MAX;
+	double secondMinimum = DBL_MAX;
+	int firstMinimumIndex = -1;
+	int secondMinimumIndex = -1;
+	for (int i = 0;i<descriptors.size();i++)
+	{
+		auto descriptor2 = descriptors[i];
+		double distance = DescriptorService::CalculateDistance(descriptor, descriptor2);
+		if (distance < firstMinimum)
+		{
+			secondMinimum = firstMinimum;
+			secondMinimumIndex = firstMinimumIndex;
+			firstMinimum = distance;
+			firstMinimumIndex = i;
+		}
+		else if (distance < secondMinimum)
+		{
+			secondMinimum = distance;
+			secondMinimumIndex = i;
+		}
+	}
+	return MinimumResult(firstMinimum, firstMinimumIndex, secondMinimum, secondMinimumIndex);
+}
+const double Threshold = 0.8;
+bool MinimumSuits(MinimumResult minimums)
+{
+	return (minimums.firstMinimum / minimums.secondMinimum) < Threshold;
+}
+
 vector<pair<Point, Point>> DescriptorService::FindMatches(vector<Descriptor> descriptors1, vector<Descriptor> descriptors2)
 {
 	vector<pair<Point, Point>> matches;
-	for(int i1=0;i1<descriptors1.size();i1++)
+	for(int i=0;i<descriptors1.size();i++)
 	{
-		auto descriptor1 = descriptors1[i1];
-		double firstMinimum = DBL_MAX;
-		double secondMinimum = DBL_MAX;
-		int firstMinimumIndex = -1;
-		int secondMinimumIndex = -1;
-		for(int i2=0;i2<descriptors2.size();i2++)
+		auto descriptor1 = descriptors1[i];
+		auto minimums = FindTwoMinimums(descriptor1, descriptors2);
+		if (MinimumSuits(minimums))
 		{
-			auto descriptor2 = descriptors2[i2];
-			double distance = CalculateDistance(descriptor1, descriptor2);
-			if (distance < firstMinimum)
+			auto descriptor2 = descriptors2[minimums.firstMinimumIndex];
+			auto backwardMinimums = FindTwoMinimums(descriptor2, descriptors1);
+			if (MinimumSuits(backwardMinimums))
 			{
-				secondMinimum = firstMinimum;
-				secondMinimumIndex = firstMinimumIndex;
-				firstMinimum = distance;
-				firstMinimumIndex = i2;
-			}
-			else if (distance < secondMinimum)
-			{
-				secondMinimum = distance;
-				secondMinimumIndex = i2;
+				matches.push_back(
+				{
+					descriptor1.GetPoint(),
+					descriptor2.GetPoint()
+				});
 			}
 		}
-		if ((firstMinimum / secondMinimum) < Threshold)
-		{
-			matches.push_back(
-			{
-				descriptor1.GetPoint(), 
-				descriptors2[firstMinimumIndex].GetPoint()
-			});
-		}
-		return matches;
+
 	}
+	
+	return matches;
 }
 
 

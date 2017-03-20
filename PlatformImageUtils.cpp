@@ -37,8 +37,7 @@ QImage PlatformImageUtils::LoadQImageFromFile(QString fileName)
 void PlatformImageUtils::SaveImage(Image& image, QString filePath)
 {
 	QImage qImage(image.Width(), image.Height(), QImage::Format::Format_RGB32);
-	qImage.save(filePath);
-
+	
 	 for (int y = 0; y < image.Height(); y++)
 	 { 
 		 for (int x = 0; x < image.Width(); x++) 
@@ -48,4 +47,32 @@ void PlatformImageUtils::SaveImage(Image& image, QString filePath)
 		 } 
 	 }    
 	 qImage.save(filePath); 
+}
+
+QImage PlatformImageUtils::DrawImage(Image & image, vector<pair<Point, Point>> matches,int secondImageXShift)
+{
+	QImage qImage(image.Width(), image.Height(), QImage::Format::Format_RGB32);
+
+	for (int y = 0; y < image.Height(); y++)
+	{
+		for (int x = 0; x < image.Width(); x++)
+		{
+			int color = (int)(image.PixelAt(x, y));
+			qImage.setPixel(x, y, qRgb(color, color, color));
+		}
+	}
+	for (int i = 0; i < matches.size(); i++)
+	{
+		QPainter painter(&qImage);
+		for each(auto match in matches) 
+		{
+			painter.setPen(QColor(255,0,0));
+			painter.drawLine(
+				match.first.x, 
+				match.first.y, 
+				match.second.x+secondImageXShift,
+				match.second.y);
+		}
+	}
+	return qImage;
 }

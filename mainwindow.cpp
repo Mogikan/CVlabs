@@ -6,6 +6,8 @@
 #include "DebugHelper.h"
 #include "Image.h"
 #include "POIDetector.h"
+#include "DescriptorService.h"
+
 #include <memory>
 using namespace std;
 MainWindow::MainWindow(QWidget *parent) :
@@ -50,17 +52,15 @@ void MainWindow::on_pushButton_clicked()
 
 void MainWindow::on_pushButton_3_clicked()
 {
-	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
-
-	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Moravec);
-	auto& matrix = image->GetNormalizedMatrix();
-	auto points = detector.FindPoints(*matrix, true, 300);
-	for (int i = 0; i < points.size(); i++)
-	{
-		matrix->SetElementAt(points[i].x, points[i].y, 1);
-	}
-	auto newImage = make_unique<Image>(matrix->ExtractData(), matrix->Width(), matrix->Height());
-	ShowImage(PlatformImageUtils::QImageFromInternalImage(*newImage));
+    QFileDialog imagePicker(this);
+    imagePicker.setFileMode(QFileDialog::ExistingFile);
+    imagePicker.setNameFilter(tr("Images (*.png *.jpg)"));
+    if (imagePicker.exec())
+    {
+        auto fileName = imagePicker.selectedFiles()[0];
+        qImage2 = PlatformImageUtils::LoadQImageFromFile(fileName);
+		ShowImage(qImage2);
+    }
 }
 
 void MainWindow::ShowImage(QImage image)
@@ -77,17 +77,63 @@ void MainWindow::ShowImage(QImage image)
 }
 
 void MainWindow::on_pushButton_4_clicked()
-{
-	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage);
-	
-	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
-	auto& matrix = image->GetNormalizedMatrix();
-	auto points = detector.FindPoints(*matrix,true,300);
-	for (int i = 0; i < points.size(); i++)
+{//value match
+    auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
+    auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
+    DescriptorService service;
+	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);	
+	auto points = detector.FindPoints(*image1,true,100);
+	auto points2 = detector.FindPoints(*image2,true,100);
+	auto descriptors1 = service.BuildAverageValueDescriptors(*image1, points);
+	auto descriptors2 = service.BuildAverageValueDescriptors(*image2, points2);
+	vector<pair<Point,Point>> matches = service.FindMatches(descriptors1, descriptors2);
+	auto resultImage = Matrix2D(image1->Width() + image2->Width(), std::max(image1->Height(), image2->Height()));
+	for (int y = 0; y < image1->Height(); y++)
 	{
-		matrix->SetElementAt(points[i].x, points[i].y, 1);
+		for (int x = 0; x < image1->Width(); x++)
+		{
+			resultImage.SetElementAt(x, y, image1->At(x, y));
+		}
+	}
+	for (int y = 0; y < image2->Height(); y++)
+	{
+		for (int x = 0; x < image2->Width(); x++)
+		{
+			resultImage.SetElementAt(x+image1->Width(), y, image2->At(x, y));
+		}
 	}
 	//PlatformImageUtils::SaveImage(Image(*matrix), "C:\\harris.png");
-	auto newImage = make_unique<Image>(matrix->ExtractData(), matrix->Width(), matrix->Height());
-	ShowImage(PlatformImageUtils::QImageFromInternalImage(*newImage));
+	auto matchedImage = PlatformImageUtils::DrawImage(Image(resultImage), matches, image1->Width());
+	ShowImage(matchedImage);
+}
+
+void MainWindow::on_pushButton_5_clicked()
+{//gradient match
+	auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
+	auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
+	DescriptorService service;
+	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
+	auto points = detector.FindPoints(*image1, true, 200);
+	auto points2 = detector.FindPoints(*image2, true, 200);
+	auto descriptors1 = service.BuildGradientDirectionDescriptors(*image1, points);
+	auto descriptors2 = service.BuildGradientDirectionDescriptors(*image2, points2);
+	vector<pair<Point, Point>> matches = service.FindMatches(descriptors1, descriptors2);
+	auto resultImage = Matrix2D(image1->Width() + image2->Width(), std::max(image1->Height(), image2->Height()));
+	for (int y = 0; y < image1->Height(); y++)
+	{
+		for (int x = 0; x < image1->Width(); x++)
+		{
+			resultImage.SetElementAt(x, y, image1->At(x, y));
+		}
+	}
+	for (int y = 0; y < image2->Height(); y++)
+	{
+		for (int x = 0; x < image2->Width(); x++)
+		{
+			resultImage.SetElementAt(x + image1->Width(), y, image2->At(x, y));
+		}
+	}
+	//PlatformImageUtils::SaveImage(Image(*matrix), "C:\\harris.png");
+	auto matchedImage = PlatformImageUtils::DrawImage(Image(resultImage), matches, image1->Width());
+	ShowImage(matchedImage);
 }
