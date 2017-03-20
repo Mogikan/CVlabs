@@ -17,7 +17,7 @@ public:
 	static Kernel GetSobelY();
 	static Kernel GetDerivativeX();
 	static Kernel GetDerivativeY();
-
+	static Kernel GetDerivative();
 	static unique_ptr<Kernel> BuildGaussX(double sigma);
 	static unique_ptr<Kernel> BuildGaussY(double sigma);
 private:

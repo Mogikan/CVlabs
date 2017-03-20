@@ -1,5 +1,5 @@
 #include "Matrix2D.h"
-
+#include <algorithm>
 
 
 Matrix2D::Matrix2D(double values[], int width, int height)
@@ -55,6 +55,18 @@ std::vector<double> Matrix2D::ExtractData() const
 {
 
 	return elements;
+}
+
+void Matrix2D::Normalize()
+{
+	auto minmaxElement = minmax_element(elements.begin(), elements.end());
+	auto minElement = minmaxElement.first[0];
+	auto maxElement = minmaxElement.second[0];
+	transform(elements.begin(), elements.end(), elements.begin(),
+		[minElement, maxElement](double element)->double
+	{
+		return ((element - minElement) / (maxElement - minElement));
+	});
 }
 
 int Matrix2D::Width() const

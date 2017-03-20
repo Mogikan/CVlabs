@@ -99,3 +99,13 @@ Kernel Kernel::GetDerivativeY()
 	return Kernel({1, 0 , -1},1,3,Point(0,1));
 }
 
+Kernel Kernel::GetDerivative()
+{
+	return Kernel(
+	{
+		0,1,0,
+		1,0,-1,
+		0,-1,0
+	},3,3,Point(1,1));
+}
+
