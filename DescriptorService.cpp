@@ -10,7 +10,9 @@ DescriptorService::DescriptorService()
 vector<Descriptor> DescriptorService::BuildAverageValueDescriptors(Matrix2D & image, vector<Point> interestingPoints, int step, int gridSize)
 {
 	vector<Descriptor> descriptors;
-	auto dxdy = ImageFramework::Convolve(image,Kernel::GetDerivative());
+	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
+
+	auto dxdy = ImageFramework::Convolve(*smothedImage,Kernel::GetDerivative());
 	for each (Point point in interestingPoints)
 	{
 		descriptors.push_back(BuildAverageValueDescriptor(*dxdy, point,step,gridSize));
@@ -21,8 +23,9 @@ vector<Descriptor> DescriptorService::BuildAverageValueDescriptors(Matrix2D & im
 vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(Matrix2D & image, vector<Point> interestingPoints,int step, int gridSize, int buckets)
 {
 	vector<Descriptor> descriptors;
-	auto dxImage = ImageFramework::Convolve(image, Kernel::GetDerivativeX());
-	auto dyImage = ImageFramework::Convolve(image, Kernel::GetDerivativeY());
+	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
+	auto dxImage = ImageFramework::Convolve(*smothedImage, Kernel::GetDerivativeX());
+	auto dyImage = ImageFramework::Convolve(*smothedImage, Kernel::GetDerivativeY());
 	for each (Point point in interestingPoints)
 	{
 		descriptors.push_back(BuildGradientDirectionDescriptor(*dxImage, *dyImage, point, step, gridSize, buckets));
