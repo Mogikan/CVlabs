@@ -8,11 +8,11 @@ POIDetector::POIDetector(POISearchMethod searchType)
 	{
 	case POISearchMethod::Harris:
 		threshold = 0.05;
-		operatorValuesProcessor = [&](Matrix2D & image) {return BuildHarrisOperatorValues(image); };
+		operatorValuesProcessor = [&](const Matrix2D & image) {return BuildHarrisOperatorValues(image); };
 		break;
 	case POISearchMethod::Moravec:
 		threshold = 0.001;
-		operatorValuesProcessor = [&](Matrix2D & image) {return BuildMoravecOperatorValues(image); };
+		operatorValuesProcessor = [&](const Matrix2D & image) {return BuildMoravecOperatorValues(image); };
 		break;
 	default:
 		break;
@@ -23,7 +23,7 @@ POIDetector::~POIDetector()
 {
 }
 
-vector<Point> POIDetector::FindPoints(Matrix2D & image, bool suppressNonMaximum,int leftPointCount)
+vector<Point> POIDetector::FindPoints(const Matrix2D & image, bool suppressNonMaximum,int leftPointCount)
 {
 	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
 	auto specialPointsOperatorValues = operatorValuesProcessor(*smothedImage);
@@ -40,7 +40,7 @@ vector<Point> POIDetector::FindPoints(Matrix2D & image, bool suppressNonMaximum,
 
 }
 
-Matrix2D POIDetector::BuildMoravecOperatorValues(Matrix2D & image)
+Matrix2D POIDetector::BuildMoravecOperatorValues(const Matrix2D & image)
 {
 	double const shift = 1;
 	auto minContrastMatrix = Matrix2D(image.Width(), image.Height());
@@ -83,7 +83,7 @@ Matrix2D POIDetector::BuildMoravecOperatorValues(Matrix2D & image)
 	//PlatformImageUtils::SaveImage(Image(*minContrastMatrix), "C:\\moravecContrast.png");
 	return minContrastMatrix;
 }
-Matrix2D POIDetector::BuildHarrisOperatorValues(Matrix2D & image)
+Matrix2D POIDetector::BuildHarrisOperatorValues(const Matrix2D & image)
 {
 	auto dx = ImageFramework::ApplySobelX(image);
 	auto dy = ImageFramework::ApplySobelY(image);
@@ -120,7 +120,7 @@ Matrix2D POIDetector::BuildHarrisOperatorValues(Matrix2D & image)
 	return minContrastMatrix;
 }
 
-vector<Point> POIDetector::ChoosePeaks(Matrix2D & contrastMatrix)
+vector<Point> POIDetector::ChoosePeaks(const Matrix2D & contrastMatrix)
 {
 	vector<Point> result;
 	for (int y = 0; y < contrastMatrix.Height(); y++)
@@ -168,7 +168,7 @@ double DistanceSQR(Point first, Point second)
 }
 
 vector<Point> POIDetector::SuppressNonMaximum(
-	Matrix2D & operatorValues, 
+	const Matrix2D & operatorValues, 
 	vector<Point> foundPoints,
 	int leftPointsCount
 )
@@ -189,7 +189,8 @@ vector<Point> POIDetector::SuppressNonMaximum(
 				auto secondPoint = result[point2Index];
 				if (DistanceSQR(firstPoint, secondPoint) < r*r)
 				{
-					if (operatorValues.At(firstPoint.x, firstPoint.y) > EqualityFactor * operatorValues.At(secondPoint.x, secondPoint.y))
+					if (operatorValues.At(firstPoint.x, firstPoint.y)> 
+						EqualityFactor * operatorValues.At(secondPoint.x, secondPoint.y))
 					{
 						result.erase(result.begin() + point2Index);
 						point2Index--;

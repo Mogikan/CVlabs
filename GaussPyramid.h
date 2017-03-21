@@ -10,7 +10,7 @@ class GaussPyramid
 {
 public:
 	GaussPyramid(
-		Matrix2D& originalImage,
+		const Matrix2D& originalImage,
 		int octaveCount,
 		int layersInOctave,
 		double sigma0, 

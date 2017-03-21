@@ -11,8 +11,8 @@ ImageFramework::~ImageFramework()
 
 
 unique_ptr<Matrix2D> ImageFramework::Convolve(
-	Matrix2D& originalImageMatrix,
-	Kernel& kernel, 
+	const Matrix2D& originalImageMatrix,
+	const Kernel& kernel, 
 	BorderMode borderHandlingMode)
 {	
 	int width = originalImageMatrix.Width();
@@ -36,7 +36,7 @@ unique_ptr<Matrix2D> ImageFramework::Convolve(
 
 
 
-unique_ptr<Matrix2D> ImageFramework::ApplySobelOperator(Matrix2D& originalImage, BorderMode borderHandlingMode)
+unique_ptr<Matrix2D> ImageFramework::ApplySobelOperator(const Matrix2D& originalImage, BorderMode borderHandlingMode)
 {
 	auto sobelXImage = Convolve(originalImage, Kernel::GetSobelX(), borderHandlingMode);
 	int width = sobelXImage->Width();
@@ -58,17 +58,17 @@ unique_ptr<Matrix2D> ImageFramework::ApplySobelOperator(Matrix2D& originalImage,
 	return make_unique<Matrix2D>(sobelOperatorResult, width, height);
 }
 
-unique_ptr<Matrix2D> ImageFramework::ApplySobelX(Matrix2D & originalImage, BorderMode borderHandlingMode)
+unique_ptr<Matrix2D> ImageFramework::ApplySobelX(const Matrix2D & originalImage, BorderMode borderHandlingMode)
 {
 	return Convolve(originalImage, Kernel::GetSobelX(), borderHandlingMode);
 }
 
-unique_ptr<Matrix2D> ImageFramework::ApplySobelY(Matrix2D & originalImage, BorderMode borderHandlingMode) 
+unique_ptr<Matrix2D> ImageFramework::ApplySobelY(const Matrix2D & originalImage, BorderMode borderHandlingMode) 
 {
 	return Convolve(originalImage, Kernel::GetSobelY(), borderHandlingMode);;
 }
 
-unique_ptr<Matrix2D> ImageFramework::ApplyGaussSmooth(Matrix2D& image, double sigma)
+unique_ptr<Matrix2D> ImageFramework::ApplyGaussSmooth(const Matrix2D& image, double sigma)
 {
 	auto gausKernelX = Kernel::BuildGaussX(sigma);
 	auto gausKernelY = Kernel::BuildGaussY(sigma);
@@ -85,7 +85,7 @@ unique_ptr<Matrix2D> ImageFramework::ApplyGaussSmooth(Matrix2D& image, double si
 	return gaussImageMatrix;
 }
 
-unique_ptr<Matrix2D> ImageFramework::DownscaleImageTwice(Matrix2D & image)
+unique_ptr<Matrix2D> ImageFramework::DownscaleImageTwice(const Matrix2D & image)
 {
 	auto result = make_unique<Matrix2D>(image.Width()/2,image.Height()/2);
 	for (int y = 0; y < result->Height(); y++)
@@ -112,7 +112,7 @@ POIDetector ImageFramework::CreatePOIDetector(POISearchMethod searchMethod)
 
 
 unique_ptr<GaussPyramid> ImageFramework::BuildGaussPyramid(
-	Matrix2D& image,
+	const Matrix2D& image,
 	int octaveCount, 
 	int layersInOctave, 
 	double sigma0, 

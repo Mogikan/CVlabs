@@ -24,7 +24,7 @@ Kernel::~Kernel()
 {
 }
 
-Point Kernel::Center()
+Point Kernel::Center() const
 {
 	return applicationPoint;
 }

@@ -7,7 +7,11 @@ DescriptorService::DescriptorService()
 {
 }
 
-vector<Descriptor> DescriptorService::BuildAverageValueDescriptors(Matrix2D & image, vector<Point> interestingPoints, int step, int gridSize)
+vector<Descriptor> DescriptorService::BuildAverageValueDescriptors(
+	const Matrix2D & image, 
+	vector<Point> interestingPoints, 
+	int step, 
+	int gridSize)
 {
 	vector<Descriptor> descriptors;
 	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
@@ -20,7 +24,12 @@ vector<Descriptor> DescriptorService::BuildAverageValueDescriptors(Matrix2D & im
 	return descriptors;
 }
 
-vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(Matrix2D & image, vector<Point> interestingPoints,int step, int gridSize, int buckets)
+vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(
+	const Matrix2D & image, 
+	vector<Point> interestingPoints,
+	int step, 
+	int gridSize, 
+	int buckets)
 {
 	vector<Descriptor> descriptors;
 	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
@@ -33,7 +42,11 @@ vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(Matrix2D
 	return descriptors;
 }
 
-Descriptor DescriptorService::BuildAverageValueDescriptor(const Matrix2D & image, Point point, int step, int gridSize)
+Descriptor DescriptorService::BuildAverageValueDescriptor(
+	const Matrix2D & image, 
+	Point point, 
+	int step, 
+	int gridSize)
 {
 	vector<double> descriptorValues;
 	for (int i = 0; i < gridSize*gridSize; i++)
@@ -57,7 +70,13 @@ Descriptor DescriptorService::BuildAverageValueDescriptor(const Matrix2D & image
 	return Descriptor(point, descriptorValues);
 }
 
-Descriptor DescriptorService::BuildGradientDirectionDescriptor(Matrix2D& dxImage,Matrix2D& dyImage, Point point, int step, int gridSize,int buckets)
+Descriptor DescriptorService::BuildGradientDirectionDescriptor(
+	const Matrix2D& dxImage,
+	const Matrix2D& dyImage, 
+	Point point, 
+	int step, 
+	int gridSize,
+	int buckets)
 {
 	vector<double> descriptorValues;
 	for (int i = 0; i < gridSize * gridSize * buckets; i++)

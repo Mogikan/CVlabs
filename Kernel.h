@@ -12,7 +12,7 @@ public:
 	Kernel(vector<double> values, int width, int height,Point applicationPoint);
 	Kernel(const Kernel& kernel);
 	~Kernel();
-	Point Center();
+	Point Center() const;
 	static Kernel GetSobelX();
 	static Kernel GetSobelY();
 	static Kernel GetDerivativeX();
