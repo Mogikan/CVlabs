@@ -7,15 +7,16 @@ using namespace std;
 class Descriptor
 {
 public:	
-	Descriptor(Point location, vector<double> value) :location(location), descriptorValue(value) {};
-	void Normalize();	
+	Descriptor(Point location, vector<double> value);
 	int Size();
 	double operator[](int index);
 	Point GetPoint();
 private:
 	const double Threshold = 0.2;
-	Point location;	
-	void RemoveNoise();	
+	Point location;			
 	vector<double> descriptorValue;
+	void Normalize();
+	void RemoveNoise();
+
 };
 

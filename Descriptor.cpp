@@ -1,6 +1,13 @@
 #include "Descriptor.h"
 
 
+Descriptor::Descriptor(Point location, vector<double> value):location(location), descriptorValue(value)
+{
+	Normalize();
+	RemoveNoise();
+	Normalize();
+}
+
 void Descriptor::Normalize()
 {
 	auto minmaxElement = minmax_element(descriptorValue.begin(), descriptorValue.end());
