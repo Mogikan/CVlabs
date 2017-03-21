@@ -87,23 +87,7 @@ void MainWindow::on_pushButton_4_clicked()
 	auto descriptors1 = service.BuildAverageValueDescriptors(*image1, points);
 	auto descriptors2 = service.BuildAverageValueDescriptors(*image2, points2);
 	vector<pair<Point,Point>> matches = service.FindMatches(descriptors1, descriptors2);
-	auto resultImage = Matrix2D(image1->Width() + image2->Width(), std::max(image1->Height(), image2->Height()));
-	for (int y = 0; y < image1->Height(); y++)
-	{
-		for (int x = 0; x < image1->Width(); x++)
-		{
-			resultImage.SetElementAt(x, y, image1->At(x, y));
-		}
-	}
-	for (int y = 0; y < image2->Height(); y++)
-	{
-		for (int x = 0; x < image2->Width(); x++)
-		{
-			resultImage.SetElementAt(x+image1->Width(), y, image2->At(x, y));
-		}
-	}
-	//PlatformImageUtils::SaveImage(Image(*matrix), "C:\\harris.png");
-	auto matchedImage = PlatformImageUtils::DrawImage(Image(resultImage), matches, image1->Width());
+	auto matchedImage = PlatformImageUtils::DrawImage(*image1,*image2, matches, image1->Width());
 	ShowImage(matchedImage);
 }
 
@@ -117,23 +101,7 @@ void MainWindow::on_pushButton_5_clicked()
 	auto points2 = detector.FindPoints(*image2, true, 200);
 	auto descriptors1 = service.BuildGradientDirectionDescriptors(*image1, points);
 	auto descriptors2 = service.BuildGradientDirectionDescriptors(*image2, points2);
-	vector<pair<Point, Point>> matches = service.FindMatches(descriptors1, descriptors2);
-	auto resultImage = Matrix2D(image1->Width() + image2->Width(), std::max(image1->Height(), image2->Height()));
-	for (int y = 0; y < image1->Height(); y++)
-	{
-		for (int x = 0; x < image1->Width(); x++)
-		{
-			resultImage.SetElementAt(x, y, image1->At(x, y));
-		}
-	}
-	for (int y = 0; y < image2->Height(); y++)
-	{
-		for (int x = 0; x < image2->Width(); x++)
-		{
-			resultImage.SetElementAt(x + image1->Width(), y, image2->At(x, y));
-		}
-	}
-	//PlatformImageUtils::SaveImage(Image(*matrix), "C:\\harris.png");
-	auto matchedImage = PlatformImageUtils::DrawImage(Image(resultImage), matches, image1->Width());
+	vector<pair<Point, Point>> matches = service.FindMatches(descriptors1, descriptors2);	
+	auto matchedImage = PlatformImageUtils::DrawImage(*image1,*image2, matches, image1->Width());
 	ShowImage(matchedImage);
 }

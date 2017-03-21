@@ -49,8 +49,28 @@ void PlatformImageUtils::SaveImage(Image& image, QString filePath)
 	 qImage.save(filePath); 
 }
 
-QImage PlatformImageUtils::DrawImage(Image & image, vector<pair<Point, Point>> matches,int secondImageXShift)
+QImage PlatformImageUtils::DrawImage(
+	const Matrix2D& image1,
+	const Matrix2D& image2, 
+	vector<pair<Point, Point>> matches,
+	int secondImageXShift)
 {
+	auto resultImage = Matrix2D(image1.Width() + image2.Width(), std::max(image1.Height(), image2.Height()));
+	for (int y = 0; y < image1.Height(); y++)
+	{
+		for (int x = 0; x < image1.Width(); x++)
+		{
+			resultImage.SetElementAt(x, y, image1.At(x, y));
+		}
+	}
+	for (int y = 0; y < image2.Height(); y++)
+	{
+		for (int x = 0; x < image2.Width(); x++)
+		{
+			resultImage.SetElementAt(x + image1.Width(), y, image2.At(x, y));
+		}
+	}
+	Image image(resultImage);
 	QImage qImage(image.Width(), image.Height(), QImage::Format::Format_RGB32);
 
 	for (int y = 0; y < image.Height(); y++)
