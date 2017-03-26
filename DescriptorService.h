@@ -22,8 +22,8 @@ public:
 		int buckets = 8);
 
 	vector<pair<Point, Point>> FindMatches(
-		vector<Descriptor> descriptors1, 
-		vector<Descriptor> descriptors2);
+		const vector<Descriptor>& descriptors1, 
+		const vector<Descriptor>& descriptors2);
 
 	static double CalculateDistance(Descriptor descriptor1, Descriptor descriptor2);
 private:

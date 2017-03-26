@@ -17,7 +17,7 @@ vector<Descriptor> DescriptorService::BuildAverageValueDescriptors(
 	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
 
 	auto dxdy = ImageFramework::Convolve(*smothedImage,Kernel::GetDerivative());
-	for each (Point point in interestingPoints)
+	for(Point point : interestingPoints)
 	{
 		descriptors.push_back(BuildAverageValueDescriptor(*dxdy, point,step,gridSize));
 	}
@@ -35,7 +35,7 @@ vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(
 	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
 	auto dxImage = ImageFramework::Convolve(*smothedImage, Kernel::GetDerivativeX());
 	auto dyImage = ImageFramework::Convolve(*smothedImage, Kernel::GetDerivativeY());
-	for each (Point point in interestingPoints)
+	for (Point point : interestingPoints)
 	{
 		descriptors.push_back(BuildGradientDirectionDescriptor(*dxImage, *dyImage, point, step, gridSize, buckets));
 	}
@@ -48,11 +48,7 @@ Descriptor DescriptorService::BuildAverageValueDescriptor(
 	int step, 
 	int gridSize)
 {
-	vector<double> descriptorValues;
-	for (int i = 0; i < gridSize*gridSize; i++)
-	{
-		descriptorValues.push_back(0);
-	}
+	vector<double> descriptorValues(gridSize*gridSize,0.0);
 
 	int gridTop = point.y - gridSize / 2 * step + step - 1;
 	int gridLeft = point.x - gridSize / 2 * step + step - 1;
@@ -78,11 +74,7 @@ Descriptor DescriptorService::BuildGradientDirectionDescriptor(
 	int gridSize,
 	int buckets)
 {
-	vector<double> descriptorValues;
-	for (int i = 0; i < gridSize * gridSize * buckets; i++)
-	{
-		descriptorValues.push_back(0);
-	}
+	vector<double> descriptorValues(gridSize*gridSize*buckets,0.0);
 	int gridTop = point.y - gridSize / 2 * step + step - 1;
 	int gridLeft = point.x - gridSize / 2 * step + step - 1;
 	double bucketAngleStep = 2 * M_PI / buckets;
@@ -105,7 +97,7 @@ Descriptor DescriptorService::BuildGradientDirectionDescriptor(
 			double firstBucketCenter = firstNearestBucket*bucketAngleStep + halfBucketAngleStep;
 			double firstBucketValuePart = 1 - abs(fi - firstBucketCenter)/bucketAngleStep;
 			int firstBucketIndex = (cellY*gridSize + cellX)*buckets + firstNearestBucket;
-			descriptorValues[firstBucketIndex] = firstBucketValuePart *derivativeLength;
+			descriptorValues[firstBucketIndex] += firstBucketValuePart *derivativeLength;
 			double secondValuePart = 1 - firstBucketValuePart;
 			int secondNearestBucket;
 			if (fi < halfBucketAngleStep)
@@ -125,7 +117,7 @@ Descriptor DescriptorService::BuildGradientDirectionDescriptor(
 				secondNearestBucket = firstNearestBucket-1;
 			}
 			int secondBucketIndex = (cellY*gridSize + cellX)*buckets + secondNearestBucket;
-			descriptorValues[secondBucketIndex] = secondValuePart *derivativeLength;			
+			descriptorValues[secondBucketIndex] += secondValuePart *derivativeLength;			
 		}
 	}
 	return Descriptor(point, descriptorValues);
@@ -156,7 +148,7 @@ struct MinimumResult
 	int secondMinimumIndex;
 };
 
-MinimumResult FindTwoMinimums(Descriptor descriptor, vector<Descriptor> descriptors)
+MinimumResult FindTwoMinimums(Descriptor descriptor, const  vector<Descriptor>& descriptors)
 {
 	double firstMinimum = DBL_MAX;
 	double secondMinimum = DBL_MAX;
@@ -187,7 +179,7 @@ bool MinimumSuits(MinimumResult minimums)
 	return (minimums.firstMinimum / minimums.secondMinimum) < Threshold;
 }
 
-vector<pair<Point, Point>> DescriptorService::FindMatches(vector<Descriptor> descriptors1, vector<Descriptor> descriptors2)
+vector<pair<Point, Point>> DescriptorService::FindMatches(const vector<Descriptor>& descriptors1, const vector<Descriptor>& descriptors2)
 {
 	vector<pair<Point, Point>> matches;
 	for(int i=0;i<descriptors1.size();i++)

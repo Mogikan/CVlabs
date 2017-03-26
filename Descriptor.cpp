@@ -40,7 +40,7 @@ void Descriptor::RemoveNoise()
 	transform(descriptorValue.begin(), descriptorValue.end(), descriptorValue.begin(),
 		[&](double element)->double
 	{
-		return element>Threshold?element:0;
+		return element>Threshold?element:Threshold;
 	});
 }
 
