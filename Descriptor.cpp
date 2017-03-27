@@ -1,8 +1,9 @@
 #include "Descriptor.h"
 
 
-Descriptor::Descriptor(Point location, vector<double> value):location(location), descriptorValue(value)
+Descriptor::Descriptor(Point location, vector<double> values):location(location)
 {
+	copy(values.begin(), values.end(), this->begin());
 	Normalize();
 	RemoveNoise();
 	Normalize();
@@ -10,24 +11,14 @@ Descriptor::Descriptor(Point location, vector<double> value):location(location),
 
 void Descriptor::Normalize()
 {
-	auto minmaxElement = minmax_element(descriptorValue.begin(), descriptorValue.end());
+	auto minmaxElement = minmax_element(this->begin(), this->end());
 	auto minElement = minmaxElement.first[0];
 	auto maxElement = minmaxElement.second[0];
-	transform(descriptorValue.begin(), descriptorValue.end(), descriptorValue.begin(),
+	transform(this->begin(), this->end(), this->begin(),
 		[minElement, maxElement](double element)->double
 	{
 		return ((element - minElement) / (maxElement - minElement));
 	});
-}
-
-int Descriptor::Size()
-{
-	return descriptorValue.size();
-}
-
-double Descriptor::operator[](int index)
-{
-	return descriptorValue.at(index);
 }
 
 Point Descriptor::GetPoint()
@@ -37,7 +28,7 @@ Point Descriptor::GetPoint()
 
 void Descriptor::RemoveNoise()
 {	
-	transform(descriptorValue.begin(), descriptorValue.end(), descriptorValue.begin(),
+	transform(this->begin(), this->end(), this->begin(),
 		[&](double element)->double
 	{
 		return element>Threshold?element:Threshold;

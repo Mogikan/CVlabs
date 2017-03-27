@@ -2,7 +2,6 @@
 #include "ImageFramework.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
-
 DescriptorService::DescriptorService()
 {
 }
@@ -73,7 +72,8 @@ vector<double> CalculateDescriptorValues(
 	Point point,
 	int step,
 	int gridSize,
-	int buckets
+	int buckets,
+	double angle
 )
 {
 	vector<double> descriptorValues(gridSize*gridSize*buckets, 0.0);
@@ -126,6 +126,7 @@ vector<double> CalculateDescriptorValues(
 }
 
 
+
 struct TwoElementsResult
 {
 	TwoElementsResult(double firstElement, int firstElementIndex, double secondElement, int secondElementIndex) :
@@ -166,28 +167,6 @@ TwoElementsResult FindTwoMaximums(const vector<double>& values)
 	return TwoElementsResult(firstMaximum, firstMaximumIndex, secondMaximum, secondMaximumIndex);
 }
 
-vector<double> RotateHistogramsCyclic(const vector<double>& input,int shift, int bucketsCount) 
-{
-	int inputSize = input.size();
-	int histogramCount = inputSize / bucketsCount;	
-	vector<double>result(inputSize);
-	for (int i = 0; i < histogramCount; i++)
-	{
-		int descriptorOffset = i*bucketsCount;
-		vector<double> histogramBuffer(bucketsCount);
-		copy(input.begin() + descriptorOffset,
-			input.begin() + descriptorOffset + bucketsCount,
-			histogramBuffer.begin());		
-		rotate(
-			histogramBuffer.begin(),
-			histogramBuffer.begin() + shift,
-			histogramBuffer.end()
-		);
-		copy(histogramBuffer.begin(), histogramBuffer.end(), result.begin() + descriptorOffset);
-	}
-	return result;
-}
-
 void DescriptorService::AddGradientDirectionDescriptors(
 	vector<Descriptor>& targetDescriptors,
 	const Matrix2D& dxImage,
@@ -199,25 +178,53 @@ void DescriptorService::AddGradientDirectionDescriptors(
 	int mainDirectionBuckets
 )
 {
-	auto largeGridHistogram = CalculateDescriptorValues(dxImage, dyImage, point, step, 1,mainDirectionBuckets);
+	auto largeGridHistogram = CalculateDescriptorValues(
+		dxImage, 
+		dyImage, 
+		point, 
+		step, 
+		1,
+		mainDirectionBuckets,
+		0);
 	auto maximums = FindTwoMaximums(largeGridHistogram);
-
-	auto descriptorValues = CalculateDescriptorValues(dxImage, dyImage, point, step, gridSize, buckets);	
-	
-	auto firstMaxDescriptorValues = RotateHistogramsCyclic(descriptorValues,buckets*(maximums.firstElementIndex/mainDirectionBuckets),buckets);
-	targetDescriptors.push_back(Descriptor(point, firstMaxDescriptorValues));
-	if (maximums.secondElement / maximums.firstElement > 0.8) 
+	targetDescriptors.push_back(
+		Descriptor(
+			point,
+			CalculateDescriptorValues(
+				dxImage,
+				dyImage,
+				point,
+				step,
+				gridSize,
+				buckets,
+				maximums.firstElementIndex*M_PI*2 / mainDirectionBuckets
+			)
+		)
+	);
+	if (maximums.secondElement / maximums.firstElement > 0.8)
 	{
-		auto secondMaxDescriptorValues = RotateHistogramsCyclic(descriptorValues, buckets*(maximums.secondElementIndex / mainDirectionBuckets),buckets);
-		targetDescriptors.push_back(Descriptor(point, secondMaxDescriptorValues));
-	}
+		targetDescriptors.push_back(
+			Descriptor(
+				point,
+				CalculateDescriptorValues(
+					dxImage,
+					dyImage,
+					point,				
+					step,
+					gridSize,
+					buckets,
+					maximums.secondElementIndex*M_PI * 2 / mainDirectionBuckets			
+				)
+			)
+		);
+	}	
 }
 
 
 double DescriptorService::CalculateDistance(Descriptor descriptor1, Descriptor descriptor2)
 {
 	double distance = 0;
-	for (int i = 0; i < descriptor1.Size(); i++)
+	for (int i = 0; i < descriptor1.size(); i++)
 	{
 		distance += (descriptor1[i] - descriptor2[i])*(descriptor1[i] - descriptor2[i]);
 	}

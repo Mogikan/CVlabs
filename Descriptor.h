@@ -4,17 +4,14 @@
 #include "Point.h"
 #include <algorithm>
 using namespace std;
-class Descriptor
+class Descriptor:public vector<double>
 {
 public:	
-	Descriptor(Point location, vector<double> value);
-	int Size();
-	double operator[](int index);
+	Descriptor(Point location, vector<double> value);	
 	Point GetPoint();
 private:
 	const double Threshold = 0.2;
 	Point location;			
-	vector<double> descriptorValue;
 	void Normalize();
 	void RemoveNoise();
 
