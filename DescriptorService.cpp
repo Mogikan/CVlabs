@@ -29,7 +29,8 @@ vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(
 	vector<Point> interestingPoints,
 	int step, 
 	int gridSize, 
-	int buckets)
+	int buckets,
+	int mainDirectionBuckets)
 {
 	vector<Descriptor> descriptors;
 	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
@@ -37,7 +38,7 @@ vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(
 	auto dyImage = ImageFramework::Convolve(*smothedImage, Kernel::GetDerivativeY());
 	for (Point point : interestingPoints)
 	{
-		descriptors.push_back(BuildGradientDirectionDescriptor(*dxImage, *dyImage, point, step, gridSize, buckets));
+		AddGradientDirectionDescriptors(descriptors, *dxImage, *dyImage, point, step, gridSize, buckets, mainDirectionBuckets);
 	}
 	return descriptors;
 }
@@ -66,22 +67,23 @@ Descriptor DescriptorService::BuildAverageValueDescriptor(
 	return Descriptor(point, descriptorValues);
 }
 
-Descriptor DescriptorService::BuildGradientDirectionDescriptor(
+vector<double> CalculateDescriptorValues(
 	const Matrix2D& dxImage,
-	const Matrix2D& dyImage, 
-	Point point, 
-	int step, 
+	const Matrix2D& dyImage,
+	Point point,
+	int step,
 	int gridSize,
-	int buckets)
+	int buckets
+)
 {
-	vector<double> descriptorValues(gridSize*gridSize*buckets,0.0);
+	vector<double> descriptorValues(gridSize*gridSize*buckets, 0.0);
 	int gridTop = point.y - gridSize / 2 * step + step - 1;
 	int gridLeft = point.x - gridSize / 2 * step + step - 1;
 	double bucketAngleStep = 2 * M_PI / buckets;
-	double halfBucketAngleStep = bucketAngleStep /2;
+	double halfBucketAngleStep = bucketAngleStep / 2;
 	for (int pixelY = 0; pixelY < gridSize*step; pixelY++)
 	{
-		for (int pixelX = 0; pixelX < gridSize*step;pixelX++)
+		for (int pixelX = 0; pixelX < gridSize*step; pixelX++)
 		{
 			int imageX = pixelX + gridLeft;
 			int imageY = pixelY + gridTop;
@@ -93,9 +95,9 @@ Descriptor DescriptorService::BuildGradientDirectionDescriptor(
 			double fi = atan2(dy, dx);
 			if (fi < 0)
 				fi = 2 * M_PI + fi;
-			int firstNearestBucket = (int)(fi / bucketAngleStep);			
+			int firstNearestBucket = (int)(fi / bucketAngleStep);
 			double firstBucketCenter = firstNearestBucket*bucketAngleStep + halfBucketAngleStep;
-			double firstBucketValuePart = 1 - abs(fi - firstBucketCenter)/bucketAngleStep;
+			double firstBucketValuePart = 1 - abs(fi - firstBucketCenter) / bucketAngleStep;
 			int firstBucketIndex = (cellY*gridSize + cellX)*buckets + firstNearestBucket;
 			descriptorValues[firstBucketIndex] += firstBucketValuePart *derivativeLength;
 			double secondValuePart = 1 - firstBucketValuePart;
@@ -104,24 +106,113 @@ Descriptor DescriptorService::BuildGradientDirectionDescriptor(
 			{
 				secondNearestBucket = buckets - 1;
 			}
-			else  if (fi > 2*M_PI - halfBucketAngleStep)
+			else  if (fi > 2 * M_PI - halfBucketAngleStep)
 			{
 				secondNearestBucket = 0;
 			}
 			else if (fi > firstNearestBucket * bucketAngleStep + halfBucketAngleStep)
 			{
-				secondNearestBucket = firstNearestBucket+1;
+				secondNearestBucket = firstNearestBucket + 1;
 			}
-			else 
+			else
 			{
-				secondNearestBucket = firstNearestBucket-1;
+				secondNearestBucket = firstNearestBucket - 1;
 			}
 			int secondBucketIndex = (cellY*gridSize + cellX)*buckets + secondNearestBucket;
-			descriptorValues[secondBucketIndex] += secondValuePart *derivativeLength;			
+			descriptorValues[secondBucketIndex] += secondValuePart *derivativeLength;
 		}
 	}
-	return Descriptor(point, descriptorValues);
+	return descriptorValues;
 }
+
+
+struct TwoElementsResult
+{
+	TwoElementsResult(double firstElement, int firstElementIndex, double secondElement, int secondElementIndex) :
+		firstElement(firstElement),
+		firstElementIndex(firstElementIndex),
+		secondElement(secondElement),
+		secondElementIndex(secondElementIndex)
+	{
+	}
+	double firstElement;
+	int firstElementIndex;
+	double secondElement;
+	int secondElementIndex;
+};
+
+TwoElementsResult FindTwoMaximums(const vector<double>& values)
+{	
+	double firstMaximum = DBL_MIN;
+	double secondMaximum = DBL_MIN;
+	int firstMaximumIndex = -1;
+	int secondMaximumIndex = -1;
+	for (int i = 0; i<values.size(); i++)
+	{
+		double value = values[i];
+		if (value > firstMaximum)
+		{
+			secondMaximum = firstMaximum;
+			secondMaximumIndex = firstMaximumIndex;
+			firstMaximum = value;
+			firstMaximumIndex = i;
+		}
+		else if (value > secondMaximum)
+		{
+			secondMaximum = value;
+			secondMaximumIndex = i;
+		}
+	}
+	return TwoElementsResult(firstMaximum, firstMaximumIndex, secondMaximum, secondMaximumIndex);
+}
+
+vector<double> RotateHistogramsCyclic(const vector<double>& input,int shift, int bucketsCount) 
+{
+	int inputSize = input.size();
+	int histogramCount = inputSize / bucketsCount;	
+	vector<double>result(inputSize);
+	for (int i = 0; i < histogramCount; i++)
+	{
+		int descriptorOffset = i*bucketsCount;
+		vector<double> histogramBuffer(bucketsCount);
+		copy(input.begin() + descriptorOffset,
+			input.begin() + descriptorOffset + bucketsCount,
+			histogramBuffer.begin());		
+		rotate(
+			histogramBuffer.begin(),
+			histogramBuffer.begin() + shift,
+			histogramBuffer.end()
+		);
+		copy(histogramBuffer.begin(), histogramBuffer.end(), result.begin() + descriptorOffset);
+	}
+	return result;
+}
+
+void DescriptorService::AddGradientDirectionDescriptors(
+	vector<Descriptor>& targetDescriptors,
+	const Matrix2D& dxImage,
+	const Matrix2D& dyImage, 
+	Point point, 
+	int step, 
+	int gridSize,
+	int buckets,
+	int mainDirectionBuckets
+)
+{
+	auto largeGridHistogram = CalculateDescriptorValues(dxImage, dyImage, point, step, 1,mainDirectionBuckets);
+	auto maximums = FindTwoMaximums(largeGridHistogram);
+
+	auto descriptorValues = CalculateDescriptorValues(dxImage, dyImage, point, step, gridSize, buckets);	
+	
+	auto firstMaxDescriptorValues = RotateHistogramsCyclic(descriptorValues,buckets*(maximums.firstElementIndex/mainDirectionBuckets),buckets);
+	targetDescriptors.push_back(Descriptor(point, firstMaxDescriptorValues));
+	if (maximums.secondElement / maximums.firstElement > 0.8) 
+	{
+		auto secondMaxDescriptorValues = RotateHistogramsCyclic(descriptorValues, buckets*(maximums.secondElementIndex / mainDirectionBuckets),buckets);
+		targetDescriptors.push_back(Descriptor(point, secondMaxDescriptorValues));
+	}
+}
+
 
 double DescriptorService::CalculateDistance(Descriptor descriptor1, Descriptor descriptor2)
 {
@@ -133,22 +224,8 @@ double DescriptorService::CalculateDistance(Descriptor descriptor1, Descriptor d
 	return sqrt(distance);
 }
 
-struct MinimumResult 
-{
-	MinimumResult(double firstMinimum,int firstMinimumIndex, double secondMinimum, int secondMinimumIndex):
-		firstMinimum(firstMinimum),
-		firstMinimumIndex(firstMinimumIndex),
-		secondMinimum(secondMinimum),
-		secondMinimumIndex(secondMinimumIndex)
-	{
-	}
-	double firstMinimum;
-	int firstMinimumIndex;
-	double secondMinimum;
-	int secondMinimumIndex;
-};
 
-MinimumResult FindTwoMinimums(Descriptor descriptor, const  vector<Descriptor>& descriptors)
+TwoElementsResult FindTwoMinimums(Descriptor descriptor, const  vector<Descriptor>& descriptors)
 {
 	double firstMinimum = DBL_MAX;
 	double secondMinimum = DBL_MAX;
@@ -171,12 +248,12 @@ MinimumResult FindTwoMinimums(Descriptor descriptor, const  vector<Descriptor>& 
 			secondMinimumIndex = i;
 		}
 	}
-	return MinimumResult(firstMinimum, firstMinimumIndex, secondMinimum, secondMinimumIndex);
+	return TwoElementsResult(firstMinimum, firstMinimumIndex, secondMinimum, secondMinimumIndex);
 }
 const double Threshold = 0.8;
-bool MinimumSuits(MinimumResult minimums)
+bool MinimumSuits(TwoElementsResult minimums)
 {
-	return (minimums.firstMinimum / minimums.secondMinimum) < Threshold;
+	return (minimums.firstElement / minimums.secondElement) < Threshold;
 }
 
 vector<pair<Point, Point>> DescriptorService::FindMatches(const vector<Descriptor>& descriptors1, const vector<Descriptor>& descriptors2)
@@ -188,7 +265,7 @@ vector<pair<Point, Point>> DescriptorService::FindMatches(const vector<Descripto
 		auto minimums = FindTwoMinimums(descriptor1, descriptors2);
 		if (MinimumSuits(minimums))
 		{
-			auto descriptor2 = descriptors2[minimums.firstMinimumIndex];
+			auto descriptor2 = descriptors2[minimums.firstElementIndex];
 			auto backwardMinimums = FindTwoMinimums(descriptor2, descriptors1);
 			if (MinimumSuits(backwardMinimums))
 			{
@@ -199,9 +276,7 @@ vector<pair<Point, Point>> DescriptorService::FindMatches(const vector<Descripto
 				});
 			}
 		}
-
 	}
-	
 	return matches;
 }
 

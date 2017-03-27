@@ -19,16 +19,33 @@ public:
 		vector<Point> interestingPoints,
 		int step=4, 
 		int gridSize=4,
-		int buckets = 8);
+		int buckets = 8,
+		int mainDirectionBuckets = 36
+	);
 
 	vector<pair<Point, Point>> FindMatches(
 		const vector<Descriptor>& descriptors1, 
 		const vector<Descriptor>& descriptors2);
 
-	static double CalculateDistance(Descriptor descriptor1, Descriptor descriptor2);
+	static double CalculateDistance(
+		Descriptor descriptor1, 
+		Descriptor descriptor2);
 private:
-	Descriptor BuildAverageValueDescriptor(const Matrix2D& image,Point point,int step, int gridSize);
-	Descriptor BuildGradientDirectionDescriptor(const Matrix2D& dxImage, const Matrix2D& dyImage, Point point,int step, int gridSize,int buckets);	
+	Descriptor BuildAverageValueDescriptor(
+		const Matrix2D& image,
+		Point point,
+		int step, 
+		int gridSize);
+
+	void AddGradientDirectionDescriptors(
+		vector<Descriptor>& targetDescriptors,
+		const Matrix2D& dxImage, 
+		const Matrix2D& dyImage, 
+		Point point,
+		int step, 
+		int gridSize,
+		int buckets, 
+		int mainDirectionBuckets);	
 	
 };
 
