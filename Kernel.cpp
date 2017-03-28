@@ -1,6 +1,5 @@
 #include "Kernel.h"
-#define _USE_MATH_DEFINES
-#include <math.h>
+#include "MathHelper.h"
 
 
 Kernel::Kernel(double values[], int width, int height,Point applicationPoint) 
@@ -29,10 +28,7 @@ Point Kernel::Center() const
 	return applicationPoint;
 }
 
-double ComputeGaussAxesValue(int x,double sigma) 
-{
-	return 1 / (sqrt(2 * M_PI)*sigma)*exp(-x*x / (2 * sigma*sigma));
-}
+
 
 int ComputeGaussKernelSize(double sigma) 
 {
@@ -47,7 +43,7 @@ unique_ptr<Kernel> Kernel::BuildGaussX(double sigma)
 	auto gaussKernelValues = vector<double>(kernelSize);
 	for (int i = 0; i < kernelSize; i++)
 	{
-		gaussKernelValues[i] = ComputeGaussAxesValue(i-kernelCenter,sigma);
+		gaussKernelValues[i] = MathHelper::ComputeGaussAxesValue(i-kernelCenter,sigma);
 	}
 	return make_unique<Kernel>(gaussKernelValues, kernelSize, 1, kernelApplicationPoint);
 }
@@ -60,7 +56,7 @@ unique_ptr<Kernel> Kernel::BuildGaussY(double sigma)
 	auto gaussKernelValues = vector<double>(kernelSize);
 	for (int i = 0; i < kernelSize; i++)
 	{
-		gaussKernelValues[i] = ComputeGaussAxesValue(i - kernelCenter, sigma);
+		gaussKernelValues[i] = MathHelper::ComputeGaussAxesValue(i - kernelCenter, sigma);
 	}
 	return make_unique<Kernel>(gaussKernelValues, 1, kernelSize, kernelApplicationPoint);
 }

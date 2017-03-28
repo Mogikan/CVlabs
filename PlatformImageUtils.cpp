@@ -19,14 +19,21 @@ unique_ptr<Image> PlatformImageUtils::LoadInternalImage(QString qImageFileName)
 
 unique_ptr<Image> PlatformImageUtils::ConvertQImageToInternalImage(QImage qImage)
 {
-	auto rgbImage = qImage.convertToFormat(QImage::Format_RGB888);
-	int width = rgbImage.width();
-	int height = rgbImage.height();
-	int bytesPerPixel = rgbImage.bytesPerLine() / width;
-	auto rgbBytes = new uchar[width*height*bytesPerPixel];
-	
-	copy((uchar*)rgbImage.bits(), ((uchar*)rgbImage.bits()) + rgbImage.byteCount(),rgbBytes);
-	return unique_ptr<Image>(new Image(rgbBytes,width,height,bytesPerPixel));
+	auto rgbBytes = new uchar[qImage.width()*qImage.height()];
+	for (int y = 0; y < qImage.height(); y++)
+	{
+		for (int x = 0; x < qImage.width(); x++)
+		{
+			QRgb pixel = qImage.pixel(x, y);
+			int b = pixel % 256;
+			int g = pixel / 256 % 256;
+			int r = pixel / 256 / 256 % 256;
+			rgbBytes[qImage.width()*y + x] = (uchar)min(255.,
+				0.213 * r +
+				0.715 * g+
+				0.072 * b);
+		}
+	}return unique_ptr<Image>(new Image(rgbBytes,qImage.width(),qImage.height(),1));
 }
 
 QImage PlatformImageUtils::LoadQImageFromFile(QString fileName)
@@ -41,8 +48,8 @@ void PlatformImageUtils::SaveImage(Image& image, QString filePath)
 	 for (int y = 0; y < image.Height(); y++)
 	 { 
 		 for (int x = 0; x < image.Width(); x++) 
-		 { 
-			 int color = (int)(image.PixelAt(x, y));   
+		 {
+			 int color = (int)(image.PixelAt(x, y));
 			 qImage.setPixel(x, y, qRgb(color, color, color)); 
 		 } 
 	 }    

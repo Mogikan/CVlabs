@@ -3,6 +3,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include "DebugHelper.h"
+#include "MathHelper.h"
 DescriptorService::DescriptorService()
 {
 }
@@ -33,9 +34,8 @@ vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(
 	int mainDirectionBuckets)
 {
 	vector<Descriptor> descriptors;
-	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
-	auto dxImage = ImageFramework::Convolve(*smothedImage, Kernel::GetDerivativeX());
-	auto dyImage = ImageFramework::Convolve(*smothedImage, Kernel::GetDerivativeY());
+	auto dxImage = ImageFramework::Convolve(image, Kernel::GetDerivativeX());
+	auto dyImage = ImageFramework::Convolve(image, Kernel::GetDerivativeY());
 	for (Point point : interestingPoints)
 	{
 		AddGradientDirectionDescriptors(descriptors, *dxImage, *dyImage, point, step, gridSize, buckets, mainDirectionBuckets);
@@ -82,23 +82,34 @@ vector<double> CalculateDescriptorValues(
 	//int gridLeft = point.x - gridSize / 2 * step + step - 1;
 	double bucketAngleStep = 2 * M_PI / buckets;
 	double halfBucketAngleStep = bucketAngleStep / 2;
-	double centerX = gridSize*step / 2 - 1;
-	double centerY = gridSize*step / 2 - 1;
+	double centerX = gridSize*step / 2;
+	double centerY = gridSize*step / 2;
 	for (int pixelY = 0; pixelY < gridSize*step; pixelY++)
 	{
 		for (int pixelX = 0; pixelX < gridSize*step; pixelX++)
 		{
 			double netDX = pixelX - centerX;
 			double netDY = pixelY - centerY;
+			double pixelDistance = sqrt(netDX*netDX + netDY*netDY);
+			double weight = MathHelper::ComputeGaussAxesValue(pixelDistance, 0.5*gridSize);
 			double rotatedDX = netDX*cos(angle) + netDY*sin(angle);
 			double rotatedDY = netDY*cos(angle) - netDX*sin(angle);
-			//DebugHelper::WriteToDebugOutput(rotatedDX);
-			//DebugHelper::WriteToDebugOutput(rotatedDY);
+			
 
-			int imageX = point.x + rotatedDX;
-			int imageY = point.y + rotatedDY;
-			int cellX = pixelX / step;
-			int cellY = pixelY / step;
+			int imageX = point.x + netDX;
+			int imageY = point.y + netDY;
+			//int cellX = pixelX / step;
+			//int cellY = pixelY / step;
+			int cellX = (rotatedDX + centerX) / step;
+			if (cellX<0 || cellX>=gridSize)
+			{
+				continue;
+			}
+			int cellY = (rotatedDY + centerY) / step;
+			if (cellY < 0 || cellY>=gridSize)
+			{
+				continue;
+			}
 			double dx = dxImage.GetIntensity(imageX, imageY);
 			double dy = dyImage.GetIntensity(imageX, imageY);
 			double derivativeLength = sqrt(dx*dx + dy*dy);
@@ -108,7 +119,7 @@ vector<double> CalculateDescriptorValues(
 			double firstBucketCenter = firstNearestBucket*bucketAngleStep + halfBucketAngleStep;
 			double firstBucketValuePart = 1 - abs(fi - firstBucketCenter) / bucketAngleStep;
 			int firstBucketIndex = (cellY*gridSize + cellX)*buckets + firstNearestBucket;
-			descriptorValues[firstBucketIndex] += firstBucketValuePart *derivativeLength;
+			descriptorValues[firstBucketIndex] += firstBucketValuePart *weight * derivativeLength;
 			double secondValuePart = 1 - firstBucketValuePart;
 			int secondNearestBucket;
 			if (fi < halfBucketAngleStep)
@@ -128,7 +139,7 @@ vector<double> CalculateDescriptorValues(
 				secondNearestBucket = firstNearestBucket - 1;
 			}
 			int secondBucketIndex = (cellY*gridSize + cellX)*buckets + secondNearestBucket;
-			descriptorValues[secondBucketIndex] += secondValuePart *derivativeLength;
+			descriptorValues[secondBucketIndex] += secondValuePart*weight *derivativeLength;
 		}
 	}
 	return descriptorValues;
@@ -175,7 +186,7 @@ TwoElementsResult FindTwoMaximums(const vector<double>& values)
 	}
 	return TwoElementsResult(firstMaximum, firstMaximumIndex, secondMaximum, secondMaximumIndex);
 }
-
+const double Threshold = 0.8;
 void DescriptorService::AddGradientDirectionDescriptors(
 	vector<Descriptor>& targetDescriptors,
 	const Matrix2D& dxImage,
@@ -191,7 +202,7 @@ void DescriptorService::AddGradientDirectionDescriptors(
 		dxImage, 
 		dyImage, 
 		point, 
-		step, 
+		step*step, 
 		1,
 		mainDirectionBuckets,
 		0);
@@ -210,7 +221,7 @@ void DescriptorService::AddGradientDirectionDescriptors(
 			)
 		)
 	);
-	if (maximums.secondElement / maximums.firstElement > 0.8)
+	if (maximums.secondElement / maximums.firstElement > Threshold)
 	{
 		targetDescriptors.push_back(
 			Descriptor(
@@ -266,7 +277,7 @@ TwoElementsResult FindTwoMinimums(Descriptor descriptor, const  vector<Descripto
 	}
 	return TwoElementsResult(firstMinimum, firstMinimumIndex, secondMinimum, secondMinimumIndex);
 }
-const double Threshold = 0.8;
+
 bool MinimumSuits(TwoElementsResult minimums)
 {
 	return (minimums.firstElement / minimums.secondElement) < Threshold;

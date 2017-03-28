@@ -6,6 +6,11 @@ MathHelper::MathHelper()
 {
 }
 
+double MathHelper::ComputeGaussAxesValue(int x, double sigma)
+{
+	return 1 / (sqrt(2 * M_PI)*sigma)*exp(-x*x / (2 * sigma*sigma));
+}
+
 pair<double, double> MathHelper::Eigenvalues(Matrix2D & matrix)
 {
 	if (!(matrix.Width() == 2 && matrix.Height() == 2))
