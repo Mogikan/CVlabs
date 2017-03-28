@@ -2,6 +2,7 @@
 #include "ImageFramework.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include "DebugHelper.h"
 DescriptorService::DescriptorService()
 {
 }
@@ -77,24 +78,32 @@ vector<double> CalculateDescriptorValues(
 )
 {
 	vector<double> descriptorValues(gridSize*gridSize*buckets, 0.0);
-	int gridTop = point.y - gridSize / 2 * step + step - 1;
-	int gridLeft = point.x - gridSize / 2 * step + step - 1;
+	//int gridTop = point.y - gridSize / 2 * step + step - 1;
+	//int gridLeft = point.x - gridSize / 2 * step + step - 1;
 	double bucketAngleStep = 2 * M_PI / buckets;
 	double halfBucketAngleStep = bucketAngleStep / 2;
+	double centerX = gridSize*step / 2 - 1;
+	double centerY = gridSize*step / 2 - 1;
 	for (int pixelY = 0; pixelY < gridSize*step; pixelY++)
 	{
 		for (int pixelX = 0; pixelX < gridSize*step; pixelX++)
 		{
-			int imageX = pixelX + gridLeft;
-			int imageY = pixelY + gridTop;
+			double netDX = pixelX - centerX;
+			double netDY = pixelY - centerY;
+			double rotatedDX = netDX*cos(angle) + netDY*sin(angle);
+			double rotatedDY = netDY*cos(angle) - netDX*sin(angle);
+			//DebugHelper::WriteToDebugOutput(rotatedDX);
+			//DebugHelper::WriteToDebugOutput(rotatedDY);
+
+			int imageX = point.x + rotatedDX;
+			int imageY = point.y + rotatedDY;
 			int cellX = pixelX / step;
 			int cellY = pixelY / step;
 			double dx = dxImage.GetIntensity(imageX, imageY);
 			double dy = dyImage.GetIntensity(imageX, imageY);
 			double derivativeLength = sqrt(dx*dx + dy*dy);
-			double fi = atan2(dy, dx);
-			if (fi < 0)
-				fi = 2 * M_PI + fi;
+			double fi = atan2(dy, dx)-angle;
+			fi = fmod(fi + M_PI * 4 , 2 * M_PI);
 			int firstNearestBucket = (int)(fi / bucketAngleStep);
 			double firstBucketCenter = firstNearestBucket*bucketAngleStep + halfBucketAngleStep;
 			double firstBucketValuePart = 1 - abs(fi - firstBucketCenter) / bucketAngleStep;

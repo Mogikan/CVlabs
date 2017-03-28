@@ -2,7 +2,8 @@
 
 
 Descriptor::Descriptor(Point location, vector<double> values):location(location)
-{
+{	
+	this->resize(values.size());
 	copy(values.begin(), values.end(), this->begin());
 	Normalize();
 	RemoveNoise();
