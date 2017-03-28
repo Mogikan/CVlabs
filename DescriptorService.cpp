@@ -98,8 +98,6 @@ vector<double> CalculateDescriptorValues(
 
 			int imageX = point.x + netDX;
 			int imageY = point.y + netDY;
-			//int cellX = pixelX / step;
-			//int cellY = pixelY / step;
 			int cellX = (rotatedDX + centerX) / step;
 			if (cellX<0 || cellX>=gridSize)
 			{
@@ -114,7 +112,17 @@ vector<double> CalculateDescriptorValues(
 			double dy = dyImage.GetIntensity(imageX, imageY);
 			double derivativeLength = sqrt(dx*dx + dy*dy);
 			double fi = atan2(dy, dx)-angle;
-			fi = fmod(fi + M_PI * 4 , 2 * M_PI);
+			//fi = fmod(fi + M_PI * 4 , 2 * M_PI);
+			//int rightBucket = ((int)((fi + halfBucketAngleStep) / bucketAngleStep))%buckets;
+			//int leftBucket = (rightBucket - 1+buckets)%buckets;
+			//double leftBucketCenter = leftBucket*bucketAngleStep + halfBucketAngleStep;
+			//double leftBucketValuePart = 1 - fmod(abs(fi - leftBucketCenter), bucketAngleStep);
+			//int leftBucketIndex = (cellY*gridSize + cellX)*buckets + leftBucket;
+			//descriptorValues[leftBucketIndex] += leftBucketValuePart *weight * derivativeLength;
+			//double rightValuePart = 1 - leftBucketValuePart;			
+			//int rightBucketIndex = (cellY*gridSize + cellX)*buckets + rightBucket;
+			//descriptorValues[rightBucketIndex] += rightValuePart*weight *derivativeLength;
+			
 			int firstNearestBucket = (int)(fi / bucketAngleStep);
 			double firstBucketCenter = firstNearestBucket*bucketAngleStep + halfBucketAngleStep;
 			double firstBucketValuePart = 1 - abs(fi - firstBucketCenter) / bucketAngleStep;

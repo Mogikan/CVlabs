@@ -93,7 +93,7 @@ QImage PlatformImageUtils::DrawImage(
 		QPainter painter(&qImage);
 		for each(auto match in matches) 
 		{
-			painter.setPen(QColor(255,0,0));
+			painter.setPen(QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256));
 			painter.drawLine(
 				match.first.x, 
 				match.first.y, 
