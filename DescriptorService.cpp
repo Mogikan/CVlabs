@@ -4,6 +4,7 @@
 #include <math.h>
 #include "DebugHelper.h"
 #include "MathHelper.h"
+#include <assert.h>
 DescriptorService::DescriptorService()
 {
 }
@@ -78,8 +79,6 @@ vector<double> CalculateDescriptorValues(
 )
 {
 	vector<double> descriptorValues(gridSize*gridSize*buckets, 0.0);
-	//int gridTop = point.y - gridSize / 2 * step + step - 1;
-	//int gridLeft = point.x - gridSize / 2 * step + step - 1;
 	double bucketAngleStep = 2 * M_PI / buckets;
 	double halfBucketAngleStep = bucketAngleStep / 2;
 	double centerX = gridSize*step / 2;
@@ -112,42 +111,16 @@ vector<double> CalculateDescriptorValues(
 			double dy = dyImage.GetIntensity(imageX, imageY);
 			double derivativeLength = sqrt(dx*dx + dy*dy);
 			double fi = atan2(dy, dx)-angle;
-			//fi = fmod(fi + M_PI * 4 , 2 * M_PI);
-			//int rightBucket = ((int)((fi + halfBucketAngleStep) / bucketAngleStep))%buckets;
-			//int leftBucket = (rightBucket - 1+buckets)%buckets;
-			//double leftBucketCenter = leftBucket*bucketAngleStep + halfBucketAngleStep;
-			//double leftBucketValuePart = 1 - fmod(abs(fi - leftBucketCenter), bucketAngleStep);
-			//int leftBucketIndex = (cellY*gridSize + cellX)*buckets + leftBucket;
-			//descriptorValues[leftBucketIndex] += leftBucketValuePart *weight * derivativeLength;
-			//double rightValuePart = 1 - leftBucketValuePart;			
-			//int rightBucketIndex = (cellY*gridSize + cellX)*buckets + rightBucket;
-			//descriptorValues[rightBucketIndex] += rightValuePart*weight *derivativeLength;
-			
-			int firstNearestBucket = (int)(fi / bucketAngleStep);
-			double firstBucketCenter = firstNearestBucket*bucketAngleStep + halfBucketAngleStep;
-			double firstBucketValuePart = 1 - abs(fi - firstBucketCenter) / bucketAngleStep;
-			int firstBucketIndex = (cellY*gridSize + cellX)*buckets + firstNearestBucket;
-			descriptorValues[firstBucketIndex] += firstBucketValuePart *weight * derivativeLength;
-			double secondValuePart = 1 - firstBucketValuePart;
-			int secondNearestBucket;
-			if (fi < halfBucketAngleStep)
-			{
-				secondNearestBucket = buckets - 1;
-			}
-			else  if (fi > 2 * M_PI - halfBucketAngleStep)
-			{
-				secondNearestBucket = 0;
-			}
-			else if (fi > firstNearestBucket * bucketAngleStep + halfBucketAngleStep)
-			{
-				secondNearestBucket = firstNearestBucket + 1;
-			}
-			else
-			{
-				secondNearestBucket = firstNearestBucket - 1;
-			}
-			int secondBucketIndex = (cellY*gridSize + cellX)*buckets + secondNearestBucket;
-			descriptorValues[secondBucketIndex] += secondValuePart*weight *derivativeLength;
+			fi = fmod(fi + M_PI * 4 , 2 * M_PI);
+			int rightBucket = ((int)((fi + halfBucketAngleStep-DBL_EPSILON) / bucketAngleStep));
+			int leftBucket = (rightBucket - 1);
+			double leftBucketCenter = leftBucket*bucketAngleStep + halfBucketAngleStep;
+			double leftBucketValuePart = 1 - abs(fi - leftBucketCenter)/ bucketAngleStep;
+			int leftBucketIndex = (cellY*gridSize + cellX)*buckets + (leftBucket+buckets)%buckets;
+			descriptorValues[leftBucketIndex] += leftBucketValuePart *weight * derivativeLength;
+			double rightValuePart = 1 - leftBucketValuePart;			
+			int rightBucketIndex = (cellY*gridSize + cellX)*buckets + rightBucket%buckets;
+			descriptorValues[rightBucketIndex] += rightValuePart*weight *derivativeLength;
 		}
 	}
 	return descriptorValues;
