@@ -16,7 +16,7 @@ vector<Descriptor> DescriptorService::BuildAverageValueDescriptors(
 	int gridSize)
 {
 	vector<Descriptor> descriptors;
-	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
+	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1);
 
 	auto dxdy = ImageFramework::Convolve(*smothedImage,Kernel::GetDerivative());
 	for(Point point : interestingPoints)
@@ -90,7 +90,7 @@ vector<double> CalculateDescriptorValues(
 			double netDX = pixelX - centerX;
 			double netDY = pixelY - centerY;
 			double pixelDistance = sqrt(netDX*netDX + netDY*netDY);
-			double weight = MathHelper::ComputeGaussAxesValue(pixelDistance, 0.5*gridSize);
+			double weight = MathHelper::ComputeGaussAxesValue(pixelDistance, gridSize*step/2/3.);
 			double rotatedDX = netDX*cos(angle) + netDY*sin(angle);
 			double rotatedDY = netDY*cos(angle) - netDX*sin(angle);
 			
