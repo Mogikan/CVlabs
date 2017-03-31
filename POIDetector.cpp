@@ -7,7 +7,7 @@ POIDetector::POIDetector(POISearchMethod searchType)
 	switch (searchType)
 	{
 	case POISearchMethod::Harris:
-		threshold = 0.01;
+		threshold = 0.075;
 		operatorValuesProcessor = [&](const Matrix2D & image) {return BuildHarrisOperatorValues(image); };
 		break;
 	case POISearchMethod::Moravec:
@@ -25,7 +25,7 @@ POIDetector::~POIDetector()
 
 vector<Point> POIDetector::FindPoints(const Matrix2D & image, bool suppressNonMaximum,int leftPointCount)
 {
-	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1.5);
+	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1);
 	auto specialPointsOperatorValues = operatorValuesProcessor(*smothedImage);
 	auto foundPoints = ChoosePeaks(specialPointsOperatorValues);
 	if (suppressNonMaximum)

@@ -35,8 +35,8 @@ vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(
 	int mainDirectionBuckets)
 {
 	vector<Descriptor> descriptors;
-	auto dxImage = ImageFramework::Convolve(image, Kernel::GetDerivativeX());
-	auto dyImage = ImageFramework::Convolve(image, Kernel::GetDerivativeY());
+	auto dxImage = ImageFramework::Convolve(image, Kernel::GetSobelX());
+	auto dyImage = ImageFramework::Convolve(image, Kernel::GetSobelY());
 	for (Point point : interestingPoints)
 	{
 		AddGradientDirectionDescriptors(descriptors, *dxImage, *dyImage, point, step, gridSize, buckets, mainDirectionBuckets);
