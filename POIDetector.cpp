@@ -7,7 +7,7 @@ POIDetector::POIDetector(POISearchMethod searchType)
 	switch (searchType)
 	{
 	case POISearchMethod::Harris:
-		threshold = 0.05;
+		threshold = 0.01;
 		operatorValuesProcessor = [&](const Matrix2D & image) {return BuildHarrisOperatorValues(image); };
 		break;
 	case POISearchMethod::Moravec:
@@ -100,11 +100,13 @@ Matrix2D POIDetector::BuildHarrisOperatorValues(const Matrix2D & image)
 			{
 				for (int shiftX = -HalfWindowSize(); shiftX <= HalfWindowSize(); shiftX++)
 				{
+					double pixelDistance = sqrt(shiftX*shiftX + shiftY*shiftY);
+					double weight = MathHelper::ComputeGaussAxesValue(pixelDistance, windowSize/2/3);
 					double Ix = dx->GetIntensity(x + shiftX, y + shiftY);
 					double Iy = dy->GetIntensity(x + shiftX, y + shiftY);
-					a += Ix*Ix;
-					b += Ix*Iy;
-					c += Iy*Iy;
+					a += weight*Ix*Ix;
+					b += weight*Ix*Iy;
+					c += weight*Iy*Iy;
 				}
 			}
 			H.SetElementAt(0, 0, a);
