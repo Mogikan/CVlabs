@@ -97,8 +97,8 @@ void MainWindow::on_pushButton_5_clicked()
 	auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
 	DescriptorService service;
 	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
-	auto points = detector.FindPoints(*image1);
-	auto points2 = detector.FindPoints(*image2);
+	auto points = detector.FindPoints(*image1,true,300);
+	auto points2 = detector.FindPoints(*image2,true,300);
 	auto descriptors1 = service.BuildGradientDirectionDescriptors(*image1, points);
 	auto descriptors2 = service.BuildGradientDirectionDescriptors(*image2, points2);
 	vector<pair<Point, Point>> matches = service.FindMatches(descriptors1, descriptors2);	

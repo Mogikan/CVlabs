@@ -5,9 +5,9 @@ Octave::Octave(unique_ptr<Matrix2D> firstImage, int layersInOctave, double sigma
 {
 	layersCount = layersInOctave;
 	layers.push_back(move(make_unique<Layer>(move(firstImage), sigma, depth)));
-	double scaleInterval = pow(2, 1./layersInOctave);
+	double scaleInterval = pow(2, 1./(layersInOctave));
 	double runningSigma = sigma;
-	for (int i = 0; i < layersInOctave; i++)
+	for (int i = 1; i < layersInOctave+3; i++)
 	{
 		double nextSigma = runningSigma * scaleInterval;
 		double convolutionSigma = sqrt(nextSigma*nextSigma - runningSigma*runningSigma);

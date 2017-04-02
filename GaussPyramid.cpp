@@ -50,16 +50,37 @@ double GaussPyramid::L(int x, int y, double sigma)
 	return nearestOctave.LayerAt(nearestLayer).GetImage().PixelAt(effectiveX, effectiveY);
 }
 
-void GaussPyramid::BuildOctaves(unique_ptr<Matrix2D> firstImage,int octaveCount, int layersInOctave)
-{
+vector<Blob> GaussPyramid::FindBlobs()
+{	
+	vector<Blob> result;
+	for (int i = 0;i < octavesCount;i++)
+	{
+		auto& octave = OctaveAt(OctavesCount() - 1);
+		for (int j = 0;j < octave.LayersCount();j++)
+		{
+			int runningLayer = j + 1;
+			
+			for (int k = 0;k < 3;k++)
+			{
+				auto& layer1 = octave.LayerAt(j + k);
+				auto& layer2 = octave.LayerAt(j + k + 1);
+				
+			}
+		}
+	}
+	return result;
+}
 
+void GaussPyramid::BuildOctaves(unique_ptr<Matrix2D> firstImage,int octaveCount, int layersInOctave)
+{	
 	auto runningImage = move(firstImage);	
 	for (int i = 0; i < octaveCount; i++)
-	{	
-
+	{
 		AddOctave(make_unique<Octave>(move(runningImage), layersInOctave, sigma0, i));
-		auto octave = OctaveAt(OctavesCount()-1);		
-		auto lastOctaveImage = octave.LayerAt(octave.ImageCount() - 1).ImageD();
+		auto& octave = OctaveAt(OctavesCount()-1);		
+		auto lastOctaveImage = octave.LayerAt(octave.LayersCount()-1).ImageD();
 		runningImage = ImageFramework::DownscaleImageTwice(lastOctaveImage);
 	}
 }
+
+

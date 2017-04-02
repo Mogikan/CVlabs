@@ -2,7 +2,7 @@
 #include <vector>
 #include "Matrix2D.h"
 #include "Octave.h"
-
+#include "Blob.h"
 
 
 using namespace std;
@@ -18,11 +18,12 @@ public:
 	int OctavesCount();
 	const Octave& OctaveAt(int index);	
 	double L(int x, int y, double sigma);
+	vector<Blob> FindBlobs();
 private:
 	int octavesCount =0;
 	std::vector<unique_ptr<Octave>> octaves;
 	double sigma0, sigmaA;
 	void AddOctave(unique_ptr<Octave> octave);
-	void BuildOctaves(unique_ptr<Matrix2D> firstImage,int octaveCount, int layersInOctave);
+	void BuildOctaves(unique_ptr<Matrix2D> firstImage,int octaveCount, int layersInOctave);	
 };
 

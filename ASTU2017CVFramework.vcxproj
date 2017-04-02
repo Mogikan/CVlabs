@@ -161,6 +161,7 @@
     <ClCompile Include="POIDetector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Blob.h" />
     <ClInclude Include="DebugHelper.h" />
     <ClInclude Include="Descriptor.h" />
     <ClInclude Include="DescriptorService.h" />
