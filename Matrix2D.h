@@ -16,11 +16,12 @@ public:
 	void SetElementAt(int x, int y, double value);
 	void SetElementAt(int plainIndex, double value);
 	vector<double> ExtractData() const;
-	virtual void Normalize();
+	virtual const Matrix2D& Normalize() const;
 	int Width() const;
 	int Height() const;
 	int TotalElements();
 	~Matrix2D();
+	const Matrix2D operator-(const Matrix2D& secondMatrix) const;
 protected:
 	std::vector<double> elements;
 private:

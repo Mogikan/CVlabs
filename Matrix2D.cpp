@@ -57,16 +57,18 @@ std::vector<double> Matrix2D::ExtractData() const
 	return elements;
 }
 
-void Matrix2D::Normalize()
+const Matrix2D& Matrix2D::Normalize() const
 {
+	Matrix2D result(this->width,this->height);
 	auto minmaxElement = minmax_element(elements.begin(), elements.end());
 	auto minElement = minmaxElement.first[0];
 	auto maxElement = minmaxElement.second[0];
-	transform(elements.begin(), elements.end(), elements.begin(),
+	transform(elements.begin(), elements.end(), result.elements.begin(),
 		[minElement, maxElement](double element)->double
 	{
 		return ((element - minElement) / (maxElement - minElement));
 	});
+	return result;
 }
 
 int Matrix2D::Width() const
@@ -165,4 +167,16 @@ double Matrix2D::GetIntensity(int x, int y, BorderMode borderHandlingMode) const
 
 Matrix2D::~Matrix2D()
 {
+}
+
+const Matrix2D Matrix2D::operator-(const Matrix2D & secondMatrix) const
+{
+	Matrix2D result(this->Width(),this->Height());
+	std::transform(
+		this->elements.begin(),
+		this->elements.end(),
+		secondMatrix.elements.begin(),
+		result.elements.begin(),
+		std::minus<double>());
+	return result;
 }

@@ -4,6 +4,8 @@
 Octave::Octave(unique_ptr<Matrix2D> firstImage, int layersInOctave, double sigma, int depth)
 {
 	layersCount = layersInOctave;
+	imageHeight = firstImage->Height();
+	imageWidth = firstImage->Width();
 	layers.push_back(move(make_unique<Layer>(move(firstImage), sigma, depth)));
 	double scaleInterval = pow(2, 1./(layersInOctave));
 	double runningSigma = sigma;
@@ -39,4 +41,26 @@ int Octave::LayersCount() const
 const Layer& Octave::LayerAt(int index) const
 {
 	return *layers.at(index);
+}
+
+vector<pair<Matrix2D,double>> Octave::ComputeDiffs() const
+{
+	vector<pair<Matrix2D,double>> diffs;
+	for (int i = 1; i < layers.size(); i++)
+	{
+		auto& layer1Matrix = layers[i - 1]->ImageD().Normalize();		
+		auto& layer2Matrix = layers[i]->ImageD().Normalize();		
+		diffs.push_back({ layer2Matrix - layer1Matrix ,layers[i]->EffectiveSigma()});
+	}
+	return diffs;
+}
+
+int Octave::ImageWidth() const
+{
+	return imageWidth;
+}
+
+int Octave::ImageHeight() const
+{
+	return imageHeight;
 }

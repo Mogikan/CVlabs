@@ -9,8 +9,13 @@ public:
 	int ImageCount() const;
 	int LayersCount() const;
 	const Layer& LayerAt(int index) const;
+	vector<pair<Matrix2D,double>> ComputeDiffs() const;
+	int ImageWidth() const;
+	int ImageHeight() const;
 private:
 	std::vector<unique_ptr<Layer>> layers;	
 	int layersCount = 0;
+	int imageHeight;
+	int imageWidth;
 };
 

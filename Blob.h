@@ -6,8 +6,7 @@ struct Blob
 		this->x = x;
 		this->y = y;
 		this->r = r;
-	}
-	~Blob();
+	}	
 	int x;
 	int y;
 	double r;

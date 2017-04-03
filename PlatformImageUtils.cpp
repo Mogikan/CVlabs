@@ -62,12 +62,30 @@ void DrawPoints(const vector<Point>& points,QImage& qImage)
 	for each(auto point in points)
 	{
 		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);		
+		painter.setPen(color);
 		painter.drawEllipse(
 			point.x,
 			point.y,
 			2,
 			2);
 		
+	}
+}
+
+void DrawBlobs(const vector<Blob>& blobs, QImage& qImage)
+{
+	QPainter painter(&qImage);
+	for each(auto blob in blobs)
+	{
+		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
+		painter.setPen(color);
+		int r = blob.r;
+		painter.drawEllipse(
+			blob.x-r,
+			blob.y-r,
+			r*2,
+			r*2);
+
 	}
 }
 
@@ -131,6 +149,23 @@ QImage PlatformImageUtils::DrawImage(
 		}
 	}
 	DrawPoints(matches, qImage,secondImageXShift);
+	return qImage;
+}
+
+QImage PlatformImageUtils::DrawImage(const Matrix2D & image1, vector<Blob> blobs)
+{
+	Image image(image1);
+	QImage qImage(image.Width(), image.Height(), QImage::Format::Format_RGB32);
+
+	for (int y = 0; y < image.Height(); y++)
+	{
+		for (int x = 0; x < image.Width(); x++)
+		{
+			int color = (int)(image.PixelAt(x, y));
+			qImage.setPixel(x, y, qRgb(color, color, color));
+		}
+	}
+	DrawBlobs(blobs, qImage);
 	return qImage;
 }
 

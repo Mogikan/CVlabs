@@ -1,6 +1,6 @@
 #include "GaussPyramid.h"
 #include "ImageFramework.h"
-
+#include "PlatformImageUtils.h"
 GaussPyramid::GaussPyramid(
 	const Matrix2D& originalImage, 
 	int octaveCount, 
@@ -50,23 +50,61 @@ double GaussPyramid::L(int x, int y, double sigma)
 	return nearestOctave.LayerAt(nearestLayer).GetImage().PixelAt(effectiveX, effectiveY);
 }
 
+bool IsLocalExtremum(int x, int y,const Matrix2D& image) 
+{
+	bool isMax = true;
+	bool isMin = true;
+	double currentValue = image.GetIntensity(x, y);
+	for (int dy = -1; dy <= 1; dy++)
+	{
+		for (int dx = -1; dx <= 1; dx++)
+		{
+			if (dx == 0 && dy == 0)
+			{
+				continue;
+			}			
+			double vicinityPointValue = image.GetIntensity(x + dx, y + dy);
+			if (vicinityPointValue+DBL_EPSILON>currentValue)
+			{
+				isMax = false;
+			}
+			if (currentValue + DBL_EPSILON > vicinityPointValue)
+			{
+				isMin = false;
+			}
+			if (isMax==false&&isMin==false) 
+			{
+				return false;
+			}
+		}
+	}
+	return true;	
+}
+
 vector<Blob> GaussPyramid::FindBlobs()
 {	
 	vector<Blob> result;
-	for (int i = 0;i < octavesCount;i++)
+	for (int i = 0;i < octaves.size();i++)
 	{
-		auto& octave = OctaveAt(OctavesCount() - 1);
-		for (int j = 0;j < octave.LayersCount();j++)
+		auto& octave = OctaveAt(i);		
+		auto diffs = octave.ComputeDiffs();
+		for (int j = 1; j < diffs.size() - 1; j++)
 		{
-			int runningLayer = j + 1;
-			
-			for (int k = 0;k < 3;k++)
+			auto& currentDiff = diffs[j];	
+			PlatformImageUtils::SaveImage(Image(currentDiff.first),
+				"C:\\Pyramid\\Octave_" + QString::number(i) + "_Layer_" + QString::number(j) + ".png");		
+
+			for (int y = 0; y < octave.ImageHeight(); y++)
 			{
-				auto& layer1 = octave.LayerAt(j + k);
-				auto& layer2 = octave.LayerAt(j + k + 1);
-				
+				for (int x = 0; x < octave.ImageWidth(); x++)
+				{
+					if (IsLocalExtremum(x, y, currentDiff.first)) 
+					{
+						result.push_back(Blob(x*pow(2,i), y*pow(2,i), currentDiff.second*sqrt(2)));
+					}
+				}
 			}
-		}
+		}		
 	}
 	return result;
 }
