@@ -9,23 +9,25 @@ Matrix2D::Matrix2D(double values[], int width, int height)
 	this->elements = std::vector<double>(values,values+width*height);
 }
 
-Matrix2D::Matrix2D(vector<double> imagePixels, int width, int height)
+Matrix2D::Matrix2D(const vector<double>& imagePixels, int width, int height)
 {
-	this->elements = imagePixels;
+	this->elements.resize(width*height);
+	copy(imagePixels.begin(), imagePixels.end(),this->elements.begin());
 	this->width = width;
 	this->height = height;
 }
 
 Matrix2D::Matrix2D(int width, int height)
 {
-	this->elements = std::vector<double>(width*height);
+	this->elements.resize(width*height);
 	this->width = width;
 	this->height = height;
 }
 
 Matrix2D::Matrix2D(const Matrix2D & matrix)
 {
-	this->elements = std::vector<double>(matrix.elements);
+	this->elements.resize(matrix.elements.size());
+	copy(matrix.elements.begin(), matrix.elements.end(), this->elements.begin());
 	this->width = matrix.width;
 	this->height = matrix.height;
 }
@@ -59,16 +61,16 @@ std::vector<double> Matrix2D::ExtractData() const
 
 const Matrix2D& Matrix2D::Normalize() const
 {
-	Matrix2D result(this->width,this->height);
+	vector<double> result(this->width*this->height,0.0);
 	auto minmaxElement = minmax_element(elements.begin(), elements.end());
 	auto minElement = minmaxElement.first[0];
 	auto maxElement = minmaxElement.second[0];
-	transform(elements.begin(), elements.end(), result.elements.begin(),
+	transform(elements.begin(), elements.end(), result.begin(),
 		[minElement, maxElement](double element)->double
 	{
 		return ((element - minElement) / (maxElement - minElement));
 	});
-	return result;
+	return Matrix2D(result,this->width,this->height);
 }
 
 int Matrix2D::Width() const
@@ -169,13 +171,15 @@ Matrix2D::~Matrix2D()
 {
 }
 
-const Matrix2D Matrix2D::operator-(const Matrix2D & secondMatrix) const
+const Matrix2D& Matrix2D::operator-(const Matrix2D & secondMatrix) const
 {
-	Matrix2D result(this->Width(),this->Height());
+	Matrix2D result(this->width,this->height);
+	auto& first = this->ExtractData();
+	auto& second = secondMatrix.ExtractData();
 	std::transform(
-		this->elements.begin(),
-		this->elements.end(),
-		secondMatrix.elements.begin(),
+		first.begin(),
+		first.end(),
+		second.begin(),
 		result.elements.begin(),
 		std::minus<double>());
 	return result;

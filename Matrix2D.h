@@ -7,7 +7,7 @@ class Matrix2D
 {
 public:
 	Matrix2D(double values[], int width, int height);
-	Matrix2D(vector<double> imagePixels, int width, int height);
+	Matrix2D(const vector<double>& imagePixels, int width, int height);
 	Matrix2D(int width, int height);	
 	Matrix2D(const Matrix2D& matrix);
 	double GetIntensity(int x, int y, BorderMode borderHandlingMode = BorderMode::extend) const;
@@ -21,7 +21,7 @@ public:
 	int Height() const;
 	int TotalElements();
 	~Matrix2D();
-	const Matrix2D operator-(const Matrix2D& secondMatrix) const;
+	const Matrix2D& operator-(const Matrix2D& secondMatrix) const;
 protected:
 	std::vector<double> elements;
 private:

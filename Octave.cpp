@@ -48,8 +48,8 @@ vector<pair<Matrix2D,double>> Octave::ComputeDiffs() const
 	vector<pair<Matrix2D,double>> diffs;
 	for (int i = 1; i < layers.size(); i++)
 	{
-		auto& layer1Matrix = layers[i - 1]->ImageD().Normalize();		
-		auto& layer2Matrix = layers[i]->ImageD().Normalize();		
+		auto layer1Matrix = layers[i - 1]->ImageD();		
+		auto layer2Matrix = layers[i]->ImageD();		
 		diffs.push_back({ layer2Matrix - layer1Matrix ,layers[i]->EffectiveSigma()});
 	}
 	return diffs;
