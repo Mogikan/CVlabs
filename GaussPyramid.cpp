@@ -49,26 +49,35 @@ double GaussPyramid::L(int x, int y, double sigma)
 		leftLayer:rightLayer;	
 	return nearestOctave.LayerAt(nearestLayer).GetImage().PixelAt(effectiveX, effectiveY);
 }
-
-bool IsLocalExtremum(int x, int y,const Matrix2D& image) 
+double epsilon = 0.05;
+bool IsLocalExtremum(int x, int y,const Matrix2D& previousImage, const Matrix2D& currentImage, const Matrix2D& nextImage)
 {
 	bool isMax = true;
-	bool isMin = true;
-	double currentValue = image.GetIntensity(x, y);
+	bool isMin = true;	
+	double currentValue = currentImage.GetIntensity(x, y);
 	for (int dy = -1; dy <= 1; dy++)
 	{
 		for (int dx = -1; dx <= 1; dx++)
 		{
-			if (dx == 0 && dy == 0)
-			{
-				continue;
-			}			
-			double vicinityPointValue = image.GetIntensity(x + dx, y + dy);
-			if (vicinityPointValue+DBL_EPSILON>currentValue)
+			//if (dx == 0 && dy == 0)
+			//{
+			//	continue;
+			//}			
+			double vicinityPointValue0 = previousImage.GetIntensity(x + dx, y + dy);
+			double vicinityPointValue1 = currentImage.GetIntensity(x + dx, y + dy);
+			double vicinityPointValue2 = nextImage.GetIntensity(x + dx, y + dy);
+			if (!(currentValue>vicinityPointValue0  //+epsilon
+				&& currentValue>vicinityPointValue2 //+epsilon
+				&& (currentValue>vicinityPointValue1//+epsilon 
+					||(dx==0&&dy==0))))				
 			{
 				isMax = false;
 			}
-			if (currentValue + DBL_EPSILON > vicinityPointValue)
+			if (!(currentValue<vicinityPointValue0  //- epsilon
+				&& currentValue<vicinityPointValue2 //- epsilon
+				&& (currentValue<vicinityPointValue1//- epsilon 
+					||(dx == 0 && dy == 0))
+				))
 			{
 				isMin = false;
 			}
@@ -90,7 +99,9 @@ vector<Blob> GaussPyramid::FindBlobs()
 		auto diffs = octave.ComputeDiffs();
 		for (int j = 1; j < diffs.size() - 1; j++)
 		{
-			auto& currentDiff = diffs[j];			
+			auto& previousDiff = diffs[j - 1];
+			auto& currentDiff = diffs[j];
+			auto& nextDiff = diffs[j + 1];
 			PlatformImageUtils::SaveImage(Image(*(currentDiff.first)),
 				"C:\\Pyramid\\Octave_" + QString::number(i) + "_Layer_" + QString::number(j) + ".png");		
 
@@ -98,7 +109,7 @@ vector<Blob> GaussPyramid::FindBlobs()
 			{
 				for (int x = 0; x < octave.ImageWidth(); x++)
 				{
-					if (IsLocalExtremum(x, y, *currentDiff.first)) 
+					if (IsLocalExtremum(x, y, *previousDiff.first, *currentDiff.first,*nextDiff.first))
 					{
 						result.push_back(Blob(x*pow(2,i), y*pow(2,i), currentDiff.second*sqrt(2)));
 					}
