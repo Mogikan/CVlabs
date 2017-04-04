@@ -59,7 +59,7 @@ std::vector<double> Matrix2D::ExtractData() const
 	return elements;
 }
 
-const Matrix2D& Matrix2D::Normalize() const
+unique_ptr<Matrix2D> Matrix2D::Normalize() const
 {
 	vector<double> result(this->width*this->height,0.0);
 	auto minmaxElement = minmax_element(elements.begin(), elements.end());
@@ -70,7 +70,7 @@ const Matrix2D& Matrix2D::Normalize() const
 	{
 		return ((element - minElement) / (maxElement - minElement));
 	});
-	return Matrix2D(result,this->width,this->height);
+	return make_unique<Matrix2D>(result,this->width,this->height);
 }
 
 int Matrix2D::Width() const
@@ -171,16 +171,16 @@ Matrix2D::~Matrix2D()
 {
 }
 
-const Matrix2D& Matrix2D::operator-(const Matrix2D & secondMatrix) const
+unique_ptr<Matrix2D> Matrix2D::operator-(const Matrix2D & secondMatrix) const
 {
-	Matrix2D result(this->width,this->height);
+	vector<double> result(this->width*this->height);
 	auto& first = this->ExtractData();
 	auto& second = secondMatrix.ExtractData();
 	std::transform(
 		first.begin(),
 		first.end(),
 		second.begin(),
-		result.elements.begin(),
+		result.begin(),
 		std::minus<double>());
-	return result;
+	return make_unique<Matrix2D>(result,this->width,this->height);
 }

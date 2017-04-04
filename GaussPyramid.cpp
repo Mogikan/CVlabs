@@ -90,16 +90,15 @@ vector<Blob> GaussPyramid::FindBlobs()
 		auto diffs = octave.ComputeDiffs();
 		for (int j = 1; j < diffs.size() - 1; j++)
 		{
-			auto& currentDiff = diffs[j];
-			auto image = make_unique<Image>(currentDiff.first);
-			PlatformImageUtils::SaveImage(*image,
+			auto& currentDiff = diffs[j];			
+			PlatformImageUtils::SaveImage(Image(*(currentDiff.first)),
 				"C:\\Pyramid\\Octave_" + QString::number(i) + "_Layer_" + QString::number(j) + ".png");		
 
 			for (int y = 0; y < octave.ImageHeight(); y++)
 			{
 				for (int x = 0; x < octave.ImageWidth(); x++)
 				{
-					if (IsLocalExtremum(x, y, currentDiff.first)) 
+					if (IsLocalExtremum(x, y, *currentDiff.first)) 
 					{
 						result.push_back(Blob(x*pow(2,i), y*pow(2,i), currentDiff.second*sqrt(2)));
 					}

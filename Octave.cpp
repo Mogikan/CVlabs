@@ -43,14 +43,15 @@ const Layer& Octave::LayerAt(int index) const
 	return *layers.at(index);
 }
 
-vector<pair<Matrix2D,double>> Octave::ComputeDiffs() const
+vector<pair<unique_ptr<Matrix2D>,double>> Octave::ComputeDiffs() const
 {
-	vector<pair<Matrix2D,double>> diffs;
+	vector<pair<unique_ptr<Matrix2D>,double>> diffs;
 	for (int i = 1; i < layers.size(); i++)
 	{
 		auto layer1Matrix = layers[i - 1]->ImageD();		
 		auto layer2Matrix = layers[i]->ImageD();		
-		diffs.push_back({ layer2Matrix - layer1Matrix ,layers[i]->EffectiveSigma()});
+		auto diff = layer2Matrix - layer1Matrix;
+		diffs.push_back({ move(diff) ,layers[i]->EffectiveSigma()});
 	}
 	return diffs;
 }
