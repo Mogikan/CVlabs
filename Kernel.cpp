@@ -1,6 +1,18 @@
 #include "Kernel.h"
 #include "MathHelper.h"
 
+const Kernel Kernel::sobelX({
+	1,0,-1,
+	2,0,-2,
+	1,0, -1,
+}, 3, 3, Point(1, 1));
+
+const Kernel Kernel::sobelY({
+	1,2,1,
+	0,0,0,
+	-1,-2,-1,
+
+}, 3, 3, Point(1, 1));
 
 Kernel::Kernel(double values[], int width, int height,Point applicationPoint) 
 	:Matrix2D(values, width, height)
@@ -61,27 +73,14 @@ unique_ptr<Kernel> Kernel::BuildGaussY(double sigma)
 	return make_unique<Kernel>(gaussKernelValues, 1, kernelSize, kernelApplicationPoint);
 }
 
-Kernel Kernel::GetSobelX()
-{
-	double sobelXKernelValues[] = {
-		1,0,-1,
-		2,0,-2,
-		1,0, - 1,
-	};	
-	Kernel sobelX(sobelXKernelValues, 3, 3, Point(1, 1));
+const Kernel& Kernel::GetSobelX()
+{	
 	return sobelX;
 }
 
 
-Kernel Kernel::GetSobelY()
+const Kernel& Kernel::GetSobelY()
 {
-	double sobelYKernelValues[]{
-		1,2,1,
-		0,0,0,
-		-1,-2,-1,
-
-	};
-	Kernel sobelY(sobelYKernelValues, 3, 3, Point(1, 1));
 	return sobelY;
 }
 

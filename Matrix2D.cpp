@@ -73,6 +73,15 @@ unique_ptr<Matrix2D> Matrix2D::Normalize() const
 	return make_unique<Matrix2D>(result,this->width,this->height);
 }
 
+pair<double, double> Matrix2D::MinMax()
+{
+	auto minmaxElement = minmax_element(elements.begin(), elements.end());
+	auto minElement = minmaxElement.first[0];
+	auto maxElement = minmaxElement.second[0];
+
+	return { minElement,maxElement };
+}
+
 int Matrix2D::Width() const
 {
 	return width;

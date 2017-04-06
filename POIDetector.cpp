@@ -2,12 +2,15 @@
 #include "ImageFramework.h"
 #include "MathHelper.h"
 
+double const POIDetector::windowSize = 7;
+double const POIDetector::HarrisThreshold = 0.075;
+
 POIDetector::POIDetector(POISearchMethod searchType)
 {
 	switch (searchType)
 	{
 	case POISearchMethod::Harris:
-		threshold = 0.075;
+		threshold = HarrisThreshold;
 		operatorValuesProcessor = [&](const Matrix2D & image) {return BuildHarrisOperatorValues(image); };
 		break;
 	case POISearchMethod::Moravec:
@@ -25,8 +28,8 @@ POIDetector::~POIDetector()
 
 vector<Point> POIDetector::FindPoints(const Matrix2D & image, bool suppressNonMaximum,int leftPointCount)
 {
-	auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1);
-	auto specialPointsOperatorValues = operatorValuesProcessor(*smothedImage);
+	//auto smothedImage = ImageFramework::ApplyGaussSmooth(image, 1);
+	auto specialPointsOperatorValues = operatorValuesProcessor(image);
 	auto foundPoints = ChoosePeaks(specialPointsOperatorValues);
 	if (suppressNonMaximum)
 	{
@@ -141,6 +144,38 @@ vector<Point> POIDetector::ChoosePeaks(const Matrix2D & contrastMatrix)
 		}
 	}
 	return result;
+}
+
+double POIDetector::HarrisOperatorValueAt(int x, int y, const Matrix2D & image)
+{
+	double operatorValue;
+	Matrix2D H(2, 2);
+	double a = 0;
+	double b = 0;
+	double c = 0;
+	for (int shiftY = -HalfWindowSize(); shiftY <= HalfWindowSize(); shiftY++)
+	{
+		for (int shiftX = -HalfWindowSize(); shiftX <= HalfWindowSize(); shiftX++)
+		{
+			double pixelDistance = sqrt(shiftX*shiftX + shiftY*shiftY);
+			double weight = MathHelper::ComputeGaussAxesValue(pixelDistance, windowSize / 2 / 3);
+
+			double Ix = ImageFramework::SobelXAt(x + shiftX, y + shiftY,image);
+			double Iy = ImageFramework::SobelYAt(x + shiftX, y + shiftY,image);
+			a += weight*Ix*Ix;
+			b += weight*Ix*Iy;
+			c += weight*Iy*Iy;
+		}
+	}
+	H.SetElementAt(0, 0, a);
+	H.SetElementAt(0, 1, b);
+	H.SetElementAt(1, 0, b);
+	H.SetElementAt(1, 1, c);
+	auto eigenvalues = MathHelper::Eigenvalues(H);
+	auto lambdaMin = min(eigenvalues.first, eigenvalues.second);
+	operatorValue = lambdaMin;
+	
+	return operatorValue;
 }
 
 bool POIDetector::CheckPointSuits(const Matrix2D& image, int x, int y)

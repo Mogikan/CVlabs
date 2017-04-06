@@ -17,6 +17,7 @@ public:
 	void SetElementAt(int plainIndex, double value);
 	vector<double> ExtractData() const;
 	virtual unique_ptr<Matrix2D> Normalize() const;
+	pair<double, double> MinMax();
 	int Width() const;
 	int Height() const;
 	int TotalElements();

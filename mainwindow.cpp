@@ -92,7 +92,7 @@ void MainWindow::on_pushButton_4_clicked()
 	//auto& gaussPyramid = ImageFramework::BuildGaussPyramid(*image1, 6, 4, 0.5, 1.6);
 	//auto& blobs = gaussPyramid->FindBlobs();
 	//ShowImage(PlatformImageUtils::DrawImage(*image1,blobs));
-	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetDoubleMatrix();
+	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
 	int octaveCount = log2(min(image->Height(), image->Width()));
 
 	auto pyramid = ImageFramework::BuildGaussPyramid(*image, octaveCount, 3, 1.6, 0.5);

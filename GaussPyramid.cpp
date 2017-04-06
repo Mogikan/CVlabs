@@ -49,12 +49,23 @@ double GaussPyramid::L(int x, int y, double sigma)
 		leftLayer:rightLayer;	
 	return nearestOctave.LayerAt(nearestLayer).GetImage().PixelAt(effectiveX, effectiveY);
 }
-double epsilon = 0.05;
-bool IsLocalExtremum(int x, int y,const Matrix2D& previousImage, const Matrix2D& currentImage, const Matrix2D& nextImage)
+
+bool IsLocalExtremum(
+	int x, 
+	int y,
+	const Matrix2D& previousDOG, 
+	const Matrix2D& currentDOG, 
+	const Matrix2D& nextDOG, 
+	double minDiffValue,
+	double maxDiffValue)
 {
 	bool isMax = true;
 	bool isMin = true;	
-	double currentValue = currentImage.GetIntensity(x, y);
+	double currentValue = currentDOG.GetIntensity(x, y);	
+	if (abs(currentValue) < 0.04)
+	{
+		return false;
+	}
 	for (int dy = -1; dy <= 1; dy++)
 	{
 		for (int dx = -1; dx <= 1; dx++)
@@ -63,19 +74,19 @@ bool IsLocalExtremum(int x, int y,const Matrix2D& previousImage, const Matrix2D&
 			//{
 			//	continue;
 			//}			
-			double vicinityPointValue0 = previousImage.GetIntensity(x + dx, y + dy);
-			double vicinityPointValue1 = currentImage.GetIntensity(x + dx, y + dy);
-			double vicinityPointValue2 = nextImage.GetIntensity(x + dx, y + dy);
-			if (!(currentValue>vicinityPointValue0  //+epsilon
-				&& currentValue>vicinityPointValue2 //+epsilon
-				&& (currentValue>vicinityPointValue1//+epsilon 
+			double vicinityPointValue0 = previousDOG.GetIntensity(x + dx, y + dy);
+			double vicinityPointValue1 = currentDOG.GetIntensity(x + dx, y + dy);
+			double vicinityPointValue2 = nextDOG.GetIntensity(x + dx, y + dy);
+			if (!(currentValue>vicinityPointValue0  
+				&& currentValue>vicinityPointValue2 
+				&& (currentValue>vicinityPointValue1 
 					||(dx==0&&dy==0))))				
 			{
 				isMax = false;
 			}
-			if (!(currentValue<vicinityPointValue0  //- epsilon
-				&& currentValue<vicinityPointValue2 //- epsilon
-				&& (currentValue<vicinityPointValue1//- epsilon 
+			if (!(currentValue<vicinityPointValue0  
+				&& currentValue<vicinityPointValue2 
+				&& (currentValue<vicinityPointValue1 
 					||(dx == 0 && dy == 0))
 				))
 			{
@@ -101,17 +112,24 @@ vector<Blob> GaussPyramid::FindBlobs()
 		{
 			auto& previousDiff = diffs[j - 1];
 			auto& currentDiff = diffs[j];
+			double maxDiffValue;
+			double minDiffValue;
+			tie(minDiffValue, maxDiffValue) = currentDiff.first->MinMax();
 			auto& nextDiff = diffs[j + 1];
-			PlatformImageUtils::SaveImage(Image(*(currentDiff.first)),
-				"C:\\Pyramid\\Octave_" + QString::number(i) + "_Layer_" + QString::number(j) + ".png");		
+			//PlatformImageUtils::SaveImage(Image(*(currentDiff.first)),
+			//	"C:\\Pyramid\\Octave_" + QString::number(i) + "_Layer_" + QString::number(j) + ".png");		
 
 			for (int y = 0; y < octave.ImageHeight(); y++)
 			{
 				for (int x = 0; x < octave.ImageWidth(); x++)
 				{
-					if (IsLocalExtremum(x, y, *previousDiff.first, *currentDiff.first,*nextDiff.first))
+					if (IsLocalExtremum(x, y, *previousDiff.first, *currentDiff.first,*nextDiff.first,minDiffValue,maxDiffValue))
 					{
-						result.push_back(Blob(x*pow(2,i), y*pow(2,i), currentDiff.second*sqrt(2)));
+						double harris = POIDetector::HarrisOperatorValueAt(x, y, octave.LayerAt(j).ImageD());
+						if (harris > POIDetector::HarrisThreshold/2)
+						{
+							result.push_back(Blob(x*pow(2, i), y*pow(2, i), currentDiff.second*sqrt(2)));
+						}
 					}
 				}
 			}

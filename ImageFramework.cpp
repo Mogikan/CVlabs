@@ -34,6 +34,26 @@ unique_ptr<Matrix2D> ImageFramework::Convolve(
 	return move(convolutedImageMatrix);
 }
 
+double ImageFramework::ConvolveAt(
+	const Matrix2D& originalImageMatrix,
+	const Kernel& kernel,
+	BorderMode borderHandlingMode,
+	int x,
+	int y
+)
+{
+	int width = originalImageMatrix.Width();
+	int height = originalImageMatrix.Height();
+	double convolutionValue = 0;
+	for (int yk = -kernel.Center().y; yk < kernel.Height() - kernel.Center().y; yk++)
+		for (int xk = -kernel.Center().x; xk < kernel.Width() - kernel.Center().x; xk++)
+		{
+			double imageIntensity = originalImageMatrix.GetIntensity(x + xk, y + yk, borderHandlingMode);
+			double kernelValue = kernel.At(kernel.Center().x - xk, kernel.Center().y - yk);
+			convolutionValue += imageIntensity*kernelValue;
+		}
+	return convolutionValue;
+}
 
 
 unique_ptr<Matrix2D> ImageFramework::ApplySobelOperator(const Matrix2D& originalImage, BorderMode borderHandlingMode)
@@ -56,6 +76,16 @@ unique_ptr<Matrix2D> ImageFramework::ApplySobelOperator(const Matrix2D& original
 		return sqrt(sx*sx + sy*sy);
 	});
 	return make_unique<Matrix2D>(sobelOperatorResult, width, height);
+}
+
+double ImageFramework::SobelXAt(int x, int y, const Matrix2D & originalImage, BorderMode borderMode)
+{
+	return ConvolveAt(originalImage, Kernel::GetSobelX(), BorderMode::extend, x, y);
+}
+
+double ImageFramework::SobelYAt(int x, int y, const Matrix2D & originalImage, BorderMode borderMode)
+{
+	return ConvolveAt(originalImage, Kernel::GetSobelY(), BorderMode::extend, x, y);
 }
 
 unique_ptr<Matrix2D> ImageFramework::ApplySobelX(const Matrix2D & originalImage, BorderMode borderHandlingMode)
