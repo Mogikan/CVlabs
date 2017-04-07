@@ -20,9 +20,19 @@ int GaussPyramid::OctavesCount()
 	return octaves.size();
 }
 
-const Octave & GaussPyramid::OctaveAt(int index)
+const Octave & GaussPyramid::OctaveAt(int index) const
 {
 	return *octaves.at(index);
+}
+
+const Matrix2D & GaussPyramid::ImageAt(int octave, int layer) const
+{
+	return LayerAt(octave, layer).GetImage();
+}
+
+const Layer & GaussPyramid::LayerAt(int octave, int layer) const
+{
+	return OctaveAt(octave).LayerAt(layer);
 }
 
 void GaussPyramid::AddOctave(unique_ptr<Octave> octave)
@@ -47,7 +57,7 @@ double GaussPyramid::L(int x, int y, double sigma)
 	int nearestLayer;
 	nearestLayer = (abs(sigmaRest - leftSigma) < abs(sigmaRest - rightSigma))?
 		leftLayer:rightLayer;	
-	return nearestOctave.LayerAt(nearestLayer).GetImage().PixelAt(effectiveX, effectiveY);
+	return nearestOctave.LayerAt(nearestLayer).GetImage().GetIntensity(effectiveX, effectiveY);
 }
 
 bool IsLocalExtremum(
@@ -55,9 +65,7 @@ bool IsLocalExtremum(
 	int y,
 	const Matrix2D& previousDOG, 
 	const Matrix2D& currentDOG, 
-	const Matrix2D& nextDOG, 
-	double minDiffValue,
-	double maxDiffValue)
+	const Matrix2D& nextDOG)
 {
 	bool isMax = true;
 	bool isMin = true;	
@@ -101,20 +109,18 @@ bool IsLocalExtremum(
 	return true;	
 }
 
-vector<Blob> GaussPyramid::FindBlobs()
+vector<BlobInfo> GaussPyramid::FindBlobs()
 {	
-	vector<Blob> result;
+	vector<BlobInfo> result;
 	for (int i = 0;i < octaves.size();i++)
 	{
 		auto& octave = OctaveAt(i);		
-		auto diffs = octave.ComputeDiffs();
+		auto diffs = octave.ComputeDOGs();
 		for (int j = 1; j < diffs.size() - 1; j++)
 		{
 			auto& previousDiff = diffs[j - 1];
 			auto& currentDiff = diffs[j];
-			double maxDiffValue;
-			double minDiffValue;
-			tie(minDiffValue, maxDiffValue) = currentDiff.first->MinMax();
+			//tie(minDiffValue, maxDiffValue) = currentDiff->MinMax();
 			auto& nextDiff = diffs[j + 1];
 			//PlatformImageUtils::SaveImage(Image(*(currentDiff.first)),
 			//	"C:\\Pyramid\\Octave_" + QString::number(i) + "_Layer_" + QString::number(j) + ".png");		
@@ -123,12 +129,12 @@ vector<Blob> GaussPyramid::FindBlobs()
 			{
 				for (int x = 0; x < octave.ImageWidth(); x++)
 				{
-					if (IsLocalExtremum(x, y, *previousDiff.first, *currentDiff.first,*nextDiff.first,minDiffValue,maxDiffValue))
+					if (IsLocalExtremum(x, y, *previousDiff, *currentDiff,*nextDiff))
 					{
-						double harris = POIDetector::HarrisOperatorValueAt(x, y, octave.LayerAt(j).ImageD());
+						double harris = POIDetector::HarrisOperatorValueAt(x, y, octave.LayerAt(j).GetImage());
 						if (harris > POIDetector::HarrisThreshold/2)
 						{
-							result.push_back(Blob(x*pow(2, i), y*pow(2, i), currentDiff.second*sqrt(2)));
+							result.push_back(BlobInfo(x, y,i, j, octave.LayerAt(j).EffectiveSigma()));
 						}
 					}
 				}
@@ -138,6 +144,10 @@ vector<Blob> GaussPyramid::FindBlobs()
 	return result;
 }
 
+GaussPyramid::~GaussPyramid()
+{
+}
+
 void GaussPyramid::BuildOctaves(unique_ptr<Matrix2D> firstImage,int octaveCount, int layersInOctave)
 {	
 	auto runningImage = move(firstImage);	
@@ -145,7 +155,7 @@ void GaussPyramid::BuildOctaves(unique_ptr<Matrix2D> firstImage,int octaveCount,
 	{
 		AddOctave(make_unique<Octave>(move(runningImage), layersInOctave, sigma0, i));
 		auto& octave = OctaveAt(OctavesCount()-1);		
-		auto lastOctaveImage = octave.LayerAt(octave.LayersCount()-1).ImageD();
+		auto& lastOctaveImage = octave.LayerAt(octave.LayersCount()-1).GetImage();
 		runningImage = ImageFramework::DownscaleImageTwice(lastOctaveImage);
 	}
 }

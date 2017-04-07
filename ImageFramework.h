@@ -57,11 +57,4 @@ public:
 	static unique_ptr<Matrix2D> DownscaleImageTwice(const Matrix2D& image);
 
 	static POIDetector CreatePOIDetector(POISearchMethod searchMethod);
-
-	static unique_ptr<GaussPyramid> BuildGaussPyramid(
-		const Matrix2D& matrix,
-		int octaveCount, 
-		int octaveLayersCount,
-		double sigma0, 
-		double sigmaA);
 };

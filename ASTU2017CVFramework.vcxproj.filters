@@ -163,7 +163,7 @@
     <ClInclude Include="DescriptorService.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="Blob.h">
+    <ClInclude Include="BlobInfo.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -4,7 +4,7 @@
 #include <QtGui>
 #include "Image.h"
 #include "Point.h"
-#include "Blob.h"
+#include "BlobInfo.h"
 using namespace std;
 class PlatformImageUtils
 {
@@ -20,7 +20,7 @@ public:
 		vector<pair<Point, Point>> matches, 
 		int secondImageXShift);
 	static QImage DrawImage(const Matrix2D& image1, vector<Point> points);
-	static QImage DrawImage(const Matrix2D& image, vector<Blob> blobs);
+	static QImage DrawImage(const Matrix2D& image, vector<BlobInfo> blobs);
 	static QImage LoadQImageFromFile(QString filePath);
 private:
 	

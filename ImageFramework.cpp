@@ -140,13 +140,3 @@ POIDetector ImageFramework::CreatePOIDetector(POISearchMethod searchMethod)
 }
 
 
-
-unique_ptr<GaussPyramid> ImageFramework::BuildGaussPyramid(
-	const Matrix2D& image,
-	int octaveCount, 
-	int layersInOctave, 
-	double sigma0, 
-	double sigmaA)
-{
-	return make_unique<GaussPyramid>(image,octaveCount,layersInOctave,sigma0, sigmaA);
-}

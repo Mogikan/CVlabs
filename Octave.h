@@ -9,7 +9,7 @@ public:
 	int ImageCount() const;
 	int LayersCount() const;
 	const Layer& LayerAt(int index) const;
-	vector<pair<unique_ptr<Matrix2D>,double>> ComputeDiffs() const;
+	vector<unique_ptr<Matrix2D>> ComputeDOGs() const;
 	int ImageWidth() const;
 	int ImageHeight() const;
 private:

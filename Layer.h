@@ -8,8 +8,8 @@ class Layer
 public:
 	Layer(unique_ptr<Matrix2D> image, double scale, int depth);
 	Layer(const Layer& anotherLayer);
-	const Matrix2D& ImageD() const;
-	const Image& GetImage() const;
+	const Matrix2D& GetImage() const;
+	//const Image& GetImage() const;
 	double Sigma() const;
 	double EffectiveSigma() const;
 private:

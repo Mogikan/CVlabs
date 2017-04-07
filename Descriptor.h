@@ -7,11 +7,14 @@ using namespace std;
 class Descriptor:public vector<double>
 {
 public:	
-	Descriptor(Point location, vector<double> value);	
+	Descriptor(vector<double> value, Point location,double angle = 0,double sigma = 0);
 	Point GetPoint();
+	double Angle();
 private:
 	const double Threshold = 0.2;
-	Point location;			
+	Point location;	
+	double angle;
+	double sigma;
 	void Normalize();
 	void RemoveNoise();
 

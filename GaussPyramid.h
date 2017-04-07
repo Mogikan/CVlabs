@@ -2,7 +2,7 @@
 #include <vector>
 #include "Matrix2D.h"
 #include "Octave.h"
-#include "Blob.h"
+#include "BlobInfo.h"
 
 
 using namespace std;
@@ -12,13 +12,17 @@ public:
 	GaussPyramid(
 		const Matrix2D& originalImage,
 		int octaveCount,
-		int layersInOctave,
-		double sigma0, 
-		double sigmaA);
+		int layersInOctave=3,
+		double sigma0= 1.6,
+		double sigmaA=0.5);	
+
 	int OctavesCount();
-	const Octave& OctaveAt(int index);	
+	const Octave& OctaveAt(int index) const;	
+	const Matrix2D& ImageAt(int octave, int layer) const;
+	const Layer& LayerAt(int octave, int layer) const;
 	double L(int x, int y, double sigma);
-	vector<Blob> FindBlobs();
+	vector<BlobInfo> FindBlobs();
+	~GaussPyramid();
 private:
 	int octavesCount =0;
 	std::vector<unique_ptr<Octave>> octaves;

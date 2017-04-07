@@ -3,6 +3,7 @@
 #include <vector>
 #include "Descriptor.h"
 #include <utility>
+#include "GaussPyramid.h"
 using namespace std;
 
 class DescriptorService
@@ -40,9 +41,8 @@ private:
 
 	void AddGradientDirectionDescriptors(
 		vector<Descriptor>& targetDescriptors,
-		const Matrix2D& dxImage, 
-		const Matrix2D& dyImage, 
-		Point point,
+		const GaussPyramid& pyramid,
+		BlobInfo blob,
 		int step, 
 		int gridSize,
 		int buckets, 

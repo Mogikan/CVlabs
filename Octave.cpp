@@ -14,8 +14,8 @@ Octave::Octave(unique_ptr<Matrix2D> firstImage, int layersInOctave, double sigma
 		double nextSigma = runningSigma * scaleInterval;
 		double convolutionSigma = sqrt(nextSigma*nextSigma - runningSigma*runningSigma);
 		runningSigma = nextSigma;
-		auto runningImage = LayerAt(ImageCount() - 1).ImageD();
-		auto nextImage = ImageFramework::ApplyGaussSmooth(runningImage,convolutionSigma);
+		auto& runningImage = LayerAt(ImageCount() - 1).GetImage();
+		auto& nextImage = ImageFramework::ApplyGaussSmooth(runningImage,convolutionSigma);
 		layers.push_back(move(make_unique<Layer>(move(nextImage), runningSigma,depth)));
 	}	
 }
@@ -43,15 +43,15 @@ const Layer& Octave::LayerAt(int index) const
 	return *layers.at(index);
 }
 
-vector<pair<unique_ptr<Matrix2D>,double>> Octave::ComputeDiffs() const
+vector<unique_ptr<Matrix2D>> Octave::ComputeDOGs() const
 {
-	vector<pair<unique_ptr<Matrix2D>,double>> diffs;
+	vector<unique_ptr<Matrix2D>> diffs;
 	for (int i = 1; i < layers.size(); i++)
 	{
-		auto layer1Matrix = layers[i - 1]->ImageD();		
-		auto layer2Matrix = layers[i]->ImageD();		
+		auto layer1Matrix = layers[i - 1]->GetImage();		
+		auto layer2Matrix = layers[i]->GetImage();		
 		auto diff = layer2Matrix - layer1Matrix;
-		diffs.push_back({ move(diff) ,layers[i]->EffectiveSigma()});
+		diffs.push_back(move(diff));
 	}
 	return diffs;
 }

@@ -5,6 +5,7 @@
 #include "DebugHelper.h"
 #include "MathHelper.h"
 #include <assert.h>
+static const double Threshold =0.8;
 DescriptorService::DescriptorService()
 {
 }
@@ -35,11 +36,19 @@ vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(
 	int mainDirectionBuckets)
 {
 	vector<Descriptor> descriptors;
-	auto dxImage = ImageFramework::Convolve(image, Kernel::GetSobelX());
-	auto dyImage = ImageFramework::Convolve(image, Kernel::GetSobelY());
-	for (Point point : interestingPoints)
+	int octaveCount = log2(min(image.Height(), image.Width()))-1;
+	auto pyramid = make_unique<GaussPyramid>(image, octaveCount);
+	auto blobs = pyramid->FindBlobs();
+	for (const auto& blob:blobs)
 	{
-		AddGradientDirectionDescriptors(descriptors, *dxImage, *dyImage, point, step, gridSize, buckets, mainDirectionBuckets);
+		AddGradientDirectionDescriptors(
+			descriptors, 
+			*pyramid,
+			blob, 
+			step, 
+			gridSize, 
+			buckets, 
+			mainDirectionBuckets);
 	}
 	return descriptors;
 }
@@ -65,12 +74,12 @@ Descriptor DescriptorService::BuildAverageValueDescriptor(
 			descriptorValues[cellY * gridSize + cellX] += image.GetIntensity(imageX,imageY);
 		}
 	}
-	return Descriptor(point, descriptorValues);
+	return Descriptor(descriptorValues, point);
 }
 
+
 vector<double> CalculateDescriptorValues(
-	const Matrix2D& dxImage,
-	const Matrix2D& dyImage,
+	const Matrix2D& image,	
 	Point point,
 	int step,
 	int gridSize,
@@ -107,8 +116,8 @@ vector<double> CalculateDescriptorValues(
 			{
 				continue;
 			}
-			double dx = dxImage.GetIntensity(imageX, imageY);
-			double dy = dyImage.GetIntensity(imageX, imageY);
+			double dx = ImageFramework::SobelXAt(imageX, imageY,image);
+			double dy = ImageFramework::SobelXAt(imageX, imageY,image);
 			double derivativeLength = sqrt(dx*dx + dy*dy);
 			double fi = atan2(dy, dx)-angle;
 			fi = fmod(fi + M_PI * 4 , 2 * M_PI);
@@ -167,55 +176,60 @@ TwoElementsResult FindTwoMaximums(const vector<double>& values)
 	}
 	return TwoElementsResult(firstMaximum, firstMaximumIndex, secondMaximum, secondMaximumIndex);
 }
-const double Threshold = 0.8;
+
 void DescriptorService::AddGradientDirectionDescriptors(
 	vector<Descriptor>& targetDescriptors,
-	const Matrix2D& dxImage,
-	const Matrix2D& dyImage, 
-	Point point, 
-	int step, 
+	const GaussPyramid& pyramid,
+	BlobInfo blob,
+	int step,
 	int gridSize,
 	int buckets,
-	int mainDirectionBuckets
-)
+	int mainDirectionBuckets)
 {
+	auto& blobLayer = pyramid.LayerAt(blob.octave,blob.layer);
+	double blobStep = round(blobLayer.Sigma())*step;
 	auto largeGridHistogram = CalculateDescriptorValues(
-		dxImage, 
-		dyImage, 
-		point, 
-		step*step, 
+		blobLayer.GetImage(),
+		blob.point, 
+		blobStep*blobStep,
 		1,
 		mainDirectionBuckets,
 		0);
 	auto maximums = FindTwoMaximums(largeGridHistogram);
+	auto orientation1 = maximums.firstElementIndex*M_PI * 2 / mainDirectionBuckets;	
+	double originalx = pow(2, blob.octave)*blob.point.x;
+	double originaly = pow(2, blob.octave)*blob.point.y;
 	targetDescriptors.push_back(
-		Descriptor(
-			point,
+		Descriptor(			
 			CalculateDescriptorValues(
-				dxImage,
-				dyImage,
-				point,
-				step,
+				blobLayer.GetImage(),
+				blob.point,
+				blobStep,
 				gridSize,
 				buckets,
-				maximums.firstElementIndex*M_PI*2 / mainDirectionBuckets
-			)
+				orientation1
+			),
+			Point(originalx,originaly),
+			orientation1,
+			blobLayer.EffectiveSigma()
 		)
 	);
 	if (maximums.secondElement / maximums.firstElement > Threshold)
 	{
+		double orientation2 = maximums.secondElementIndex*M_PI * 2 / mainDirectionBuckets;
 		targetDescriptors.push_back(
-			Descriptor(
-				point,
+			Descriptor(				
 				CalculateDescriptorValues(
-					dxImage,
-					dyImage,
-					point,				
-					step,
+					blobLayer.GetImage(),
+					blob.point,
+					blobStep,
 					gridSize,
 					buckets,
-					maximums.secondElementIndex*M_PI * 2 / mainDirectionBuckets			
-				)
+					orientation2
+					),
+				Point(originalx, originaly),
+				orientation2,
+				blobLayer.EffectiveSigma()
 			)
 		);
 	}	

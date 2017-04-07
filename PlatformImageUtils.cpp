@@ -72,17 +72,17 @@ void DrawPoints(const vector<Point>& points,QImage& qImage)
 	}
 }
 
-void DrawBlobs(const vector<Blob>& blobs, QImage& qImage)
+void DrawBlobs(const vector<BlobInfo>& blobs, QImage& qImage)
 {
 	QPainter painter(&qImage);
 	for each(auto blob in blobs)
 	{
 		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
 		painter.setPen(color);
-		int r = blob.r;
+		int r = blob.effectiveSigma * sqrt(2);
 		painter.drawEllipse(
-			blob.x-r,
-			blob.y-r,
+			blob.point.x-r,
+			blob.point.y-r,
 			r*2,
 			r*2);
 
@@ -152,7 +152,7 @@ QImage PlatformImageUtils::DrawImage(
 	return qImage;
 }
 
-QImage PlatformImageUtils::DrawImage(const Matrix2D & image1, vector<Blob> blobs)
+QImage PlatformImageUtils::DrawImage(const Matrix2D & image1, vector<BlobInfo> blobs)
 {
 	Image image(image1);
 	QImage qImage(image.Width(), image.Height(), QImage::Format::Format_RGB32);

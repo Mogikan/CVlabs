@@ -1,7 +1,7 @@
 #include "Descriptor.h"
 
 
-Descriptor::Descriptor(Point location, vector<double> values):location(location)
+Descriptor::Descriptor(vector<double> values, Point location,double angle,double sigma):location(location),angle(angle),sigma(sigma)
 {	
 	this->resize(values.size());
 	copy(values.begin(), values.end(), this->begin());
@@ -25,6 +25,11 @@ void Descriptor::Normalize()
 Point Descriptor::GetPoint()
 {
 	return location;
+}
+
+double Descriptor::Angle()
+{
+	return angle;
 }
 
 void Descriptor::RemoveNoise()
