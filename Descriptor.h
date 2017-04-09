@@ -8,8 +8,9 @@ class Descriptor:public vector<double>
 {
 public:	
 	Descriptor(vector<double> value, Point location,double angle = 0,double sigma = 0);
-	Point GetPoint();
-	double Angle();
+	Point GetPoint() const;
+	double Angle() const;
+	double Sigma() const;
 private:
 	const double Threshold = 0.2;
 	Point location;	

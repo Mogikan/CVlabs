@@ -98,6 +98,9 @@
     <ClCompile Include="DescriptorService.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="Ransac.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <CustomBuild Include="mainwindow.h">
@@ -164,6 +167,9 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="BlobInfo.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Ransac.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

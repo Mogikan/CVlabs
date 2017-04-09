@@ -27,6 +27,22 @@ vector<Descriptor> DescriptorService::BuildAverageValueDescriptors(
 	return descriptors;
 }
 
+vector<Descriptor> DescriptorService::BuildOldSchoolDescriptors(
+	const Matrix2D & image,
+	vector<Point> interestingPoints,
+	int step,
+	int gridSize,
+	int buckets,
+	int mainDirectionBuckets)
+{
+	vector<Descriptor> descriptors;
+	for (Point point : interestingPoints)
+	{
+		AddOldSchoolDescriptors(descriptors, image, point, step, gridSize, buckets, mainDirectionBuckets);
+	}
+	return descriptors;
+}
+
 vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(
 	const Matrix2D & image, 
 	vector<Point> interestingPoints,
@@ -117,7 +133,7 @@ vector<double> CalculateDescriptorValues(
 				continue;
 			}
 			double dx = ImageFramework::SobelXAt(imageX, imageY,image);
-			double dy = ImageFramework::SobelXAt(imageX, imageY,image);
+			double dy = ImageFramework::SobelYAt(imageX, imageY,image);
 			double derivativeLength = sqrt(dx*dx + dy*dy);
 			double fi = atan2(dy, dx)-angle;
 			fi = fmod(fi + M_PI * 4 , 2 * M_PI);
@@ -235,6 +251,55 @@ void DescriptorService::AddGradientDirectionDescriptors(
 	}	
 }
 
+void DescriptorService::AddOldSchoolDescriptors(
+	vector<Descriptor>& targetDescriptors,
+	const Matrix2D& image,	
+	Point point,
+	int step,
+	int gridSize,
+	int buckets,
+	int mainDirectionBuckets
+)
+{
+	auto largeGridHistogram = CalculateDescriptorValues(
+		image,		
+		point,
+		step*step,
+		1,
+		mainDirectionBuckets,
+		0);
+	auto maximums = FindTwoMaximums(largeGridHistogram);
+	targetDescriptors.push_back(
+		Descriptor(			
+			CalculateDescriptorValues(
+				image,
+				point,
+				step,
+				gridSize,
+				buckets,
+				maximums.firstElementIndex*M_PI * 2 / mainDirectionBuckets
+			),
+			point
+		)
+	);
+	if (maximums.secondElement / maximums.firstElement > Threshold)
+	{
+		targetDescriptors.push_back(
+			Descriptor(				
+				CalculateDescriptorValues(
+					image,
+					point,
+					step,
+					gridSize,
+					buckets,
+					maximums.secondElementIndex*M_PI * 2 / mainDirectionBuckets
+				)
+				,point
+			)
+		);
+	}
+}
+
 
 double DescriptorService::CalculateDistance(Descriptor descriptor1, Descriptor descriptor2)
 {
@@ -278,9 +343,9 @@ bool MinimumSuits(TwoElementsResult minimums)
 	return (minimums.firstElement / minimums.secondElement) < Threshold;
 }
 
-vector<pair<Point, Point>> DescriptorService::FindMatches(const vector<Descriptor>& descriptors1, const vector<Descriptor>& descriptors2)
+vector<pair<Descriptor, Descriptor>> DescriptorService::FindMatches(const vector<Descriptor>& descriptors1, const vector<Descriptor>& descriptors2)
 {
-	vector<pair<Point, Point>> matches;
+	vector<pair<Descriptor, Descriptor>> matches;
 	for(int i=0;i<descriptors1.size();i++)
 	{
 		auto descriptor1 = descriptors1[i];
@@ -293,8 +358,8 @@ vector<pair<Point, Point>> DescriptorService::FindMatches(const vector<Descripto
 			{
 				matches.push_back(
 				{
-					descriptor1.GetPoint(),
-					descriptor2.GetPoint()
+					descriptor1,
+					descriptor2
 				});
 			}
 		}

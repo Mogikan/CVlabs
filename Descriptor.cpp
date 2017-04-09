@@ -22,12 +22,17 @@ void Descriptor::Normalize()
 	});
 }
 
-Point Descriptor::GetPoint()
+Point Descriptor::GetPoint() const
 {
 	return location;
 }
 
-double Descriptor::Angle()
+double Descriptor::Sigma() const
+{
+	return sigma;
+}
+
+double Descriptor::Angle() const
 {
 	return angle;
 }

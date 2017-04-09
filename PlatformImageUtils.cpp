@@ -81,18 +81,47 @@ void DrawBlobs(const vector<BlobInfo>& blobs, QImage& qImage)
 		painter.setPen(color);
 		int r = blob.effectiveSigma * sqrt(2);
 		painter.drawEllipse(
-			blob.point.x-r,
-			blob.point.y-r,
+			blob.point.x * pow(2,blob.octave)-r,
+			blob.point.y * pow(2, blob.octave)-r,
 			r*2,
 			r*2);
 
 	}
 }
 
+void PlatformImageUtils::DrawDescriptors(const vector<pair<Descriptor, Descriptor>>& matches, QImage& qImage, int width)
+{
+	QPainter painter(&qImage);
+	for (auto& descriptor : matches)
+	{
+		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
+		painter.setPen(color);
+		auto& point1 = descriptor.first.GetPoint();
+		auto r1 = descriptor.first.Sigma() * sqrt(2);
+		painter.drawEllipse(
+			point1.x - r1,
+			point1.y - r1,
+			r1*2,
+			r1*2);
+		auto& point2 = descriptor.second.GetPoint();
+		auto r2 = descriptor.second.Sigma() * sqrt(2);
+		painter.drawEllipse(
+			point2.x - r2+width,
+			point2.y - r2,
+			r2*2,
+			r2*2);
+		painter.drawLine(
+			point1.x,
+			point1.y,
+			point2.x + width,
+			point2.y);
+	}
+}
+
 void DrawPoints(const vector<pair<Point, Point>>& matches, QImage& qImage,int width)
 {
 	QPainter painter(&qImage);
-	for each(auto match in matches)
+	for(auto& match: matches)
 	{
 		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);		
 		painter.fillRect(
@@ -119,7 +148,7 @@ void DrawPoints(const vector<pair<Point, Point>>& matches, QImage& qImage,int wi
 QImage PlatformImageUtils::DrawImage(
 	const Matrix2D& image1,
 	const Matrix2D& image2, 
-	vector<pair<Point, Point>> matches,
+	vector<pair<Descriptor, Descriptor>> matches,
 	int secondImageXShift)
 {
 	auto resultImage = Matrix2D(image1.Width() + image2.Width(), std::max(image1.Height(), image2.Height()));
@@ -148,7 +177,7 @@ QImage PlatformImageUtils::DrawImage(
 			qImage.setPixel(x, y, qRgb(color, color, color));
 		}
 	}
-	DrawPoints(matches, qImage,secondImageXShift);
+	DrawDescriptors(matches, qImage,secondImageXShift);
 	return qImage;
 }
 
@@ -193,3 +222,16 @@ QImage PlatformImageUtils::DrawImage(const Matrix2D & image1, vector<Point> poin
 	DrawPoints(points, qImage);
 	return qImage;
 }
+
+QImage PlatformImageUtils::CombineImages(const QImage& image1,const QImage& image2,const Matrix2D& t)
+{
+	QImage qImage(image1.width()+image2.width(), (image1.height() + image2.height())/2*1.4, QImage::Format::Format_RGB32);
+	QPainter painter(&qImage);
+	painter.drawImage(0, 0, image1);
+	QTransform transform;
+	transform.setMatrix(t.At(0), t.At(1), t.At(2), t.At(3), t.At(4), t.At(5), t.At(6), t.At(7), t.At(8));
+	painter.setTransform(transform);
+	painter.drawImage(0,0,image2);
+	return qImage;
+}
+
