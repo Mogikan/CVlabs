@@ -117,10 +117,7 @@ Matrix2D Ransac::FindBestHomography(const vector<pair<Descriptor, Descriptor>>& 
 		if (bestMatching.second < positiveMatches)
 		{
 			vector<double> result(9);
-			for (int i = 0; i <9; i++)
-			{
-				result[i] = gsl_matrix_get(H,i/3,i%3);
-			}
+			copy(runningH.begin(), runningH.end(), result.begin());
 			bestMatching = {result,positiveMatches};
 		}
 	} while (0<N--);
