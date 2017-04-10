@@ -1,5 +1,4 @@
 #pragma once
-#include <armadillo>
 #include "Matrix2D.h"
 #include "Descriptor.h"
 #include <unordered_set>

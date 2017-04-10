@@ -1,6 +1,7 @@
 #include "Ransac.h"
 #include "DebugHelper.h"
-
+#include <gsl\gsl_linalg.h>
+#include <gsl\gsl_blas.h>
 
 Ransac::Ransac()
 {
@@ -21,8 +22,17 @@ Matrix2D Ransac::FindBestHomography(const vector<pair<Descriptor, Descriptor>>& 
 {
 	// Input matrix of type float
 	const int homographyMatchesCount = 4;
-	arma::mat A(homographyMatchesCount*2,9);
+	gsl_matrix * A = gsl_matrix_alloc(8, 9);
+	gsl_matrix * ATA = (gsl_matrix_alloc(9, 9));
+	gsl_matrix *U = gsl_matrix_alloc(9, 9);
+	gsl_vector *D = gsl_vector_alloc(9);
+	gsl_vector *work = gsl_vector_alloc(9);
+	
+	gsl_matrix *H = gsl_matrix_alloc(3, 3);
+	gsl_vector *vector1 = gsl_vector_alloc(3);
+	gsl_vector *vector2 = gsl_vector_alloc(3);
 	pair<vector<double>, int> bestMatching = {vector<double>(),0};
+	vector<double> runningH(9);
 	int N = 20;
 	do
 	{
@@ -42,24 +52,24 @@ Matrix2D Ransac::FindBestHomography(const vector<pair<Descriptor, Descriptor>>& 
 					double y2 = matches[nextIndex].second.GetPoint().y;
 					//A << x1 << y1 << 1 << 0 << 0 << 0 << -x2*x1 << -x2*y1 << -x2 << endr
 					//	<< 0 << 0 << 0 << x1 << y1 << 1 << -y2*x1 << -y2 * y1 << -y2 << endr;
-					A(i * 2, 0) = x1;
-					A(i * 2, 1) = y1;
-					A(i * 2, 2) = 1;
-					A(i * 2, 3) = 0;
-					A(i * 2, 4) = 0;
-					A(i * 2, 5) = 0;
-					A(i * 2, 6) = -x2 * x1;
-					A(i * 2, 7) = -x2*y1;
-					A(i * 2, 8) = -x2;
-					A(i * 2 + 1, 0) = 0;
-					A(i * 2 + 1, 1) = 0;
-					A(i * 2 + 1, 2) = 0;
-					A(i * 2 + 1, 3) = x1;
-					A(i * 2 + 1, 4) = y1;
-					A(i * 2 + 1, 5) = 1;
-					A(i * 2 + 1, 6) = -y2*x1;
-					A(i * 2 + 1, 7) = -y2*y1;
-					A(i * 2 + 1, 8) = -y2;
+					gsl_matrix_set(A,i * 2, 0, x1);
+					gsl_matrix_set(A,i * 2, 1, y1);
+					gsl_matrix_set(A,i * 2, 2, 1);
+					gsl_matrix_set(A,i * 2, 3, 0);
+					gsl_matrix_set(A,i * 2, 4, 0);
+					gsl_matrix_set(A,i * 2, 5, 0);
+					gsl_matrix_set(A,i * 2, 6, -x2 * x1);
+					gsl_matrix_set(A,i * 2, 7, -x2*y1);
+					gsl_matrix_set(A,i * 2, 8, -x2);
+					gsl_matrix_set(A,i * 2 + 1, 0, 0);
+					gsl_matrix_set(A,i * 2 + 1, 1, 0);
+					gsl_matrix_set(A,i * 2 + 1, 2, 0);
+					gsl_matrix_set(A,i * 2 + 1, 3, x1);
+					gsl_matrix_set(A,i * 2 + 1, 4, y1);
+					gsl_matrix_set(A,i * 2 + 1, 5, 1);
+					gsl_matrix_set(A,i * 2 + 1, 6, -y2*x1);
+					gsl_matrix_set(A,i * 2 + 1, 7, -y2*y1);
+					gsl_matrix_set(A,i * 2 + 1, 8, -y2);
 					break;
 				}
 				else
@@ -68,64 +78,37 @@ Matrix2D Ransac::FindBestHomography(const vector<pair<Descriptor, Descriptor>>& 
 				}
 			}
 		}
-		for (int i = 0; i < 2*4; i++)
-		{
-			DebugHelper::WriteToDebugOutput("<<");
-			for (int j = 0; j < 9; j++)
-			{
-				DebugHelper::WriteToDebugOutput(A(i, j));
-			}
-		}
-
 		// Output matrices
-		arma::mat U;
-		arma::vec S;
-		arma::mat V;
-
-		// Perform SVD
-		auto& ata =( A.t()*A).eval();
-		arma::svd(U, S, V, ata);
-		DebugHelper::WriteToDebugOutput("ATA");
-		for (int i = 0; i < ata.n_rows; i++)
+		gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1., A, A, 0., ATA);
+		gsl_linalg_SV_decomp(ATA, U, D, work);
+		for (int i = 0; i < 9; i++)
 		{
-			for (int j = 0; j < ata.n_cols; j++)
-			{
-				DebugHelper::WriteToDebugOutput(ata(i, j));
-			}
-		}
-		DebugHelper::WriteToDebugOutput("V(8)");
-			for (int i = 0; i < 9; i++)
-			{
-				DebugHelper::WriteToDebugOutput(V(i, 8));
-			}
-
-			DebugHelper::WriteToDebugOutput("U(8)");
-			for (int i = 0; i < 9; i++)
-			{
-				DebugHelper::WriteToDebugOutput(U(i, 8));
-			}
+			auto value = gsl_matrix_get(U, i, 8);
+			gsl_matrix_set(H, i / 3, i % 3, value);
+			runningH[i] = value;
+		}		
 		
-		//V-> is our H
-		double threshold = 0.5;
+		double threshold = 10;
 		int positiveMatches = 0;
 		for (int i = 0; i < matches.size(); i++)
 		{
 			auto point1 = matches[i].first.GetPoint();
 			double x1 = point1.x;
 			double y1 = point1.y;
-			arma::mat point1Affine(3, 1);
-			point1Affine
-				<< x1 << arma::endr
-				<< y1 << arma::endr
-				<< 1 << arma::endr;
-			arma::mat h(3, 3);
-			for (int i = 0; i < 9; i++)
-			{
-				h(i / 3, i % 3) = V(i, 8);
-			}
-			auto& transformedVector = (h*point1Affine).eval();
-			double x2 = transformedVector(0, 0);
-			double y2 = transformedVector(1, 0);
+			gsl_vector_set(vector1, 0, x1);
+			gsl_vector_set(vector1, 0, y1);
+			gsl_vector_set(vector1, 0, 1);
+			gsl_blas_dgemv(
+				CblasNoTrans, 
+				CblasNoTrans,
+				H, 
+				work,
+				0.0, 
+				vector2);			
+			
+			double lambda = gsl_vector_get(vector2,2);
+			double x2 = gsl_vector_get(vector2, 0) / lambda;
+			double y2 = gsl_vector_get(vector2, 1) / lambda;
 			if (sqrt((x1 - x2)*(x1 - x2) + (y1 - y2)*(y1 - y2)) < threshold)
 			{
 				positiveMatches++;
@@ -136,12 +119,20 @@ Matrix2D Ransac::FindBestHomography(const vector<pair<Descriptor, Descriptor>>& 
 			vector<double> result(9);
 			for (int i = 0; i <9; i++)
 			{
-				result[i] = V(i,8);
+				result[i] = gsl_matrix_get(H,i/3,i%3);
 			}
 			bestMatching = {result,positiveMatches};
 		}
 	} while (0<N--);
-	
+	gsl_matrix_free(A);
+	gsl_matrix_free(ATA);
+	gsl_matrix_free(U);
+	gsl_vector_free(D);
+	gsl_vector_free(work);
+
+	gsl_matrix_free(H);
+	gsl_vector_free(vector1);
+	gsl_vector_free(vector2);
 	
 	return Matrix2D(bestMatching.first,3,3);
 }
