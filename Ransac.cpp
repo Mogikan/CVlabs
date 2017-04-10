@@ -96,8 +96,8 @@ Matrix2D Ransac::FindBestHomography(const vector<pair<Descriptor, Descriptor>>& 
 			double x1 = point1.x;
 			double y1 = point1.y;
 			gsl_vector_set(vector1, 0, x1);
-			gsl_vector_set(vector1, 0, y1);
-			gsl_vector_set(vector1, 0, 1);
+			gsl_vector_set(vector1, 1, y1);
+			gsl_vector_set(vector1, 2, 1);
 			gsl_blas_dgemv(
 				CblasNoTrans, 
 				CblasNoTrans,
