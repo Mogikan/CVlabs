@@ -133,7 +133,6 @@ Matrix2D HomographyHelper::FindBestHomography(
 	{
 		throw "Bad Match";
 	}
-	// Input matrix of type float
 	
 	gsl_matrix * A = gsl_matrix_alloc(8, 9);	
 	gsl_matrix * ATA = gsl_matrix_alloc(9, 9);
@@ -147,8 +146,7 @@ Matrix2D HomographyHelper::FindBestHomography(
 	pair<vector<double>, int> bestMatching = {vector<double>(),0};	
 	do
 	{
-		InitMatrixA(matches, *A);
-		// Output matrices
+		InitMatrixA(matches, *A);		
 		gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1., A, A, 0., ATA);
 		gsl_linalg_SV_decomp(ATA, V, S, work);
 		for (int i = 0; i < 9; i++)
