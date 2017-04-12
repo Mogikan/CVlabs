@@ -7,7 +7,7 @@
 #include "Image.h"
 #include "POIDetector.h"
 #include "DescriptorService.h"
-#include "Ransac.h"
+#include "HomographyHelper.h"
 #include <memory>
 using namespace std;
 MainWindow::MainWindow(QWidget *parent) :
@@ -92,16 +92,14 @@ void MainWindow::on_pushButton_5_clicked()
 	auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
 	DescriptorService service;
 	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
-	auto points = detector.FindPoints(*image1);//,true,300);
-	auto points2 = detector.FindPoints(*image2);//, true, 300);
-	//auto descriptors1 = service.BuildOldSchoolDescriptors(*image1, points);
-	//auto descriptors2 = service.BuildOldSchoolDescriptors(*image2, points);
+	auto points = detector.FindPoints(*image1);
+	auto points2 = detector.FindPoints(*image2);
 
 	auto descriptors1 = service.BuildGradientDirectionDescriptors(*image1, points);
 	auto descriptors2 = service.BuildGradientDirectionDescriptors(*image2, points2);
-	const vector<pair<Descriptor, Descriptor>>& matches = service.FindMatches(descriptors1, descriptors2);	
-	auto& matchedImage = PlatformImageUtils::DrawImage(*image1,*image2, matches, image1->Width());
-	auto& homography = Ransac::FindBestHomography(matches);
+	const vector<pair<Descriptor, Descriptor>>& matches = service.FindMatches(descriptors1, descriptors2);
+	
+	auto& homography = HomographyHelper::FindBestHomography(matches);
 	ShowImage(PlatformImageUtils::CombineImages(qImage,qImage2,homography));
 	//ShowImage(matchedImage);
 }

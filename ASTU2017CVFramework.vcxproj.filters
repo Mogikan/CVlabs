@@ -98,7 +98,7 @@
     <ClCompile Include="DescriptorService.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="Ransac.cpp">
+    <ClCompile Include="HomographyHelper.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -169,7 +169,7 @@
     <ClInclude Include="BlobInfo.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="Ransac.h">
+    <ClInclude Include="HomographyHelper.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

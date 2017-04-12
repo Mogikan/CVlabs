@@ -227,11 +227,12 @@ QImage PlatformImageUtils::CombineImages(const QImage& image1,const QImage& imag
 {
 	QImage qImage(image1.width()+image2.width(), (image1.height() + image2.height())/2*1.4, QImage::Format::Format_RGB32);
 	QPainter painter(&qImage);
-	painter.drawImage(0, 0, image1);
-	QTransform transform;
-	transform.setMatrix(t.At(0), t.At(1), t.At(2), t.At(3), t.At(4), t.At(5), t.At(6), t.At(7), t.At(8));
-	painter.setTransform(transform);
-	painter.drawImage(0,0,image2);
+	painter.drawImage(0, 0, image1);	
+	painter.setRenderHint(QPainter::Antialiasing);
+	painter.setRenderHint(QPainter::SmoothPixmapTransform);
+	QTransform htransform(t.At(0), t.At(1),t.At(2), t.At(3), t.At(4), t.At(5), t.At(6), t.At(7), t.At(8));	
+	painter.setTransform(htransform.transposed());
+	painter.drawImage(0, 0,image2);
 	return qImage;
 }
 
