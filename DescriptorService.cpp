@@ -112,40 +112,62 @@ vector<double> CalculateDescriptorValues(
 	{
 		for (int pixelX = 0; pixelX < gridSize*step; pixelX++)
 		{
-			double netDX = pixelX - centerX;
-			double netDY = pixelY - centerY;
-			double pixelDistance = sqrt(netDX*netDX + netDY*netDY);
-			double weight = MathHelper::ComputeGaussAxesValue(pixelDistance, gridSize*step/2/3.);
-			double rotatedDX = netDX*cos(angle) + netDY*sin(angle);
-			double rotatedDY = netDY*cos(angle) - netDX*sin(angle);
+			double gridDX = pixelX - centerX;
+			double gridDY = pixelY - centerY;
+			double pixelDistance = sqrt(gridDX*gridDX + gridDY*gridDY);
+			double gaussWeight = MathHelper::ComputeGaussAxesValue(pixelDistance, gridSize*step/2/3.);
+			double rotatedDX = gridDX*cos(angle) + gridDY*sin(angle);
+			double rotatedDY = gridDY*cos(angle) - gridDX*sin(angle);
 			
 
-			int imageX = point.x + netDX;
-			int imageY = point.y + netDY;
-			int cellX = (rotatedDX + centerX) / step;
-			if (cellX<0 || cellX>=gridSize)
+			int imageX = point.x + gridDX;
+			int imageY = point.y + gridDY;
+			double rotatedGridX = rotatedDX + centerX;
+			double rightCellX = (rotatedGridX + step / 2) / step;
+			int leftCellX = rightCellX - 1;
+			double rotatedGridY = rotatedDY + centerY;
+			double BottomCellY = (rotatedDY + centerY + step / 2) / step;
+			int topCellY = BottomCellY - 1;
+			int cellY;
+			double cellCenterY;
+			int cellX;
+			double cellCenterX;
+			for (int gridShiftY = 0; gridShiftY < 2; gridShiftY++)
 			{
-				continue;
+				cellY = topCellY + gridShiftY;
+				cellCenterY = (cellY + 0.5)*step;				
+				if (cellY < 0 || cellY >= gridSize)
+				{
+					continue;
+				}
+				double gridInterpolationWeightY = abs(cellCenterY - rotatedGridY) / step;
+				for (int gridShiftX = 0; gridShiftX < 2; gridShiftX++)
+				{
+					cellX = leftCellX + gridShiftX;
+					cellCenterX = (cellX + 0.5)*step;
+					double gridInterpolationWeightX = abs(cellCenterX - rotatedGridX) / step;
+					if (cellX<0 || cellX>=gridSize)
+					{
+						continue;
+					}
+					double dx = ImageFramework::SobelXAt(imageX, imageY, image);
+					double dy = ImageFramework::SobelYAt(imageX, imageY, image);
+					double derivativeLength = sqrt(dx*dx + dy*dy);
+					double fi = atan2(dy, dx) - angle;
+					fi = fmod(fi + M_PI * 4, 2 * M_PI);
+					int rightBucket = ((int)((fi + halfBucketAngleStep - DBL_EPSILON) / bucketAngleStep));
+					int leftBucket = (rightBucket - 1);
+					double leftBucketCenter = leftBucket*bucketAngleStep + halfBucketAngleStep;
+					double leftBucketValuePart = 1 - abs(fi - leftBucketCenter) / bucketAngleStep;
+					int leftBucketIndex = (cellY*gridSize + cellX)*buckets + (leftBucket + buckets) % buckets;
+					double totalWeight = gridInterpolationWeightX * gridInterpolationWeightY * gaussWeight;
+					descriptorValues[leftBucketIndex] += leftBucketValuePart *totalWeight * derivativeLength;
+					double rightValuePart = 1 - leftBucketValuePart;
+					int rightBucketIndex = (cellY*gridSize + cellX)*buckets + rightBucket%buckets;
+					descriptorValues[rightBucketIndex] += rightValuePart*totalWeight *derivativeLength;
+				}
 			}
-			int cellY = (rotatedDY + centerY) / step;
-			if (cellY < 0 || cellY>=gridSize)
-			{
-				continue;
-			}
-			double dx = ImageFramework::SobelXAt(imageX, imageY,image);
-			double dy = ImageFramework::SobelYAt(imageX, imageY,image);
-			double derivativeLength = sqrt(dx*dx + dy*dy);
-			double fi = atan2(dy, dx)-angle;
-			fi = fmod(fi + M_PI * 4 , 2 * M_PI);
-			int rightBucket = ((int)((fi + halfBucketAngleStep-DBL_EPSILON) / bucketAngleStep));
-			int leftBucket = (rightBucket - 1);
-			double leftBucketCenter = leftBucket*bucketAngleStep + halfBucketAngleStep;
-			double leftBucketValuePart = 1 - abs(fi - leftBucketCenter)/ bucketAngleStep;
-			int leftBucketIndex = (cellY*gridSize + cellX)*buckets + (leftBucket+buckets)%buckets;
-			descriptorValues[leftBucketIndex] += leftBucketValuePart *weight * derivativeLength;
-			double rightValuePart = 1 - leftBucketValuePart;			
-			int rightBucketIndex = (cellY*gridSize + cellX)*buckets + rightBucket%buckets;
-			descriptorValues[rightBucketIndex] += rightValuePart*weight *derivativeLength;
+			
 		}
 	}
 	return descriptorValues;
