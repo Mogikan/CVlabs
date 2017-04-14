@@ -99,7 +99,7 @@ void MainWindow::on_pushButton_5_clicked()
 	auto descriptors2 = service.BuildGradientDirectionDescriptors(*image2, points2);
 	const vector<pair<Descriptor, Descriptor>>& matches = service.FindMatches(descriptors1, descriptors2);
 	
-	//auto& homography = HomographyHelper::FindBestHomography(matches);
-	//ShowImage(PlatformImageUtils::CombineImages(qImage,qImage2,homography));
-	ShowImage(PlatformImageUtils::DrawImage(*image1, *image2, matches, image1->Width()));
+	auto& homography = HomographyHelper::FindBestHomography(matches);
+	ShowImage(PlatformImageUtils::CombineImages(qImage,qImage2,homography));
+	//ShowImage(PlatformImageUtils::DrawImage(*image1, *image2, matches, image1->Width()));
 }

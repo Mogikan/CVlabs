@@ -97,7 +97,7 @@ int CalculateMatches(const vector<pair<Descriptor, Descriptor>>& matches,
 		double scale = gsl_vector_get(&vector2, 2);
 		double transformedX = gsl_vector_get(&vector2, 0) / scale;
 		double transformedY = gsl_vector_get(&vector2, 1) / scale;
-		if (sqrt(MathHelper::Sqr(transformedX - x2) + MathHelper::Sqr(transformedY - y2)) < threshold)
+		if (hypot(transformedX - x2,transformedY - y2) < threshold)
 		{
 			positiveMatches++;
 		}

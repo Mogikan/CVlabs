@@ -10,7 +10,6 @@ public:
 	MathHelper();
 	static std::pair<double,double> Eigenvalues(Matrix2D&);
 	static double MathHelper::ComputeGaussAxesValue(int x, double sigma);
-	static double Sqr(double x) { return x*x; }
 	~MathHelper();
 };
 

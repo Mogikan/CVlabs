@@ -5,6 +5,7 @@
 #include "DebugHelper.h"
 #include "MathHelper.h"
 #include <assert.h>
+#include "PointD.h"
 static const double Threshold =0.8;
 DescriptorService::DescriptorService()
 {
@@ -115,7 +116,7 @@ vector<double> CalculateDescriptorValues(
 			double gridDX = pixelX - centerX;
 			double gridDY = pixelY - centerY;
 			double pixelDistance = sqrt(gridDX*gridDX + gridDY*gridDY);
-			double gaussWeight = MathHelper::ComputeGaussAxesValue(pixelDistance, gridSize*step/2/3.);
+			double gaussWeight = MathHelper::ComputeGaussAxesValue(pixelDistance, gridSize*step / 3./2.);
 			double rotatedDX = gridDX*cos(angle) + gridDY*sin(angle);
 			double rotatedDY = gridDY*cos(angle) - gridDX*sin(angle);
 			
@@ -152,18 +153,19 @@ vector<double> CalculateDescriptorValues(
 					}
 					double dx = ImageFramework::SobelXAt(imageX, imageY, image);
 					double dy = ImageFramework::SobelYAt(imageX, imageY, image);
-					double derivativeLength = sqrt(dx*dx + dy*dy);
+					double derivativeLength = hypot(dx,dy);
 					double fi = atan2(dy, dx) - angle;
 					fi = fmod(fi + M_PI * 4, 2 * M_PI);
 					int rightBucket = ((int)((fi + halfBucketAngleStep - DBL_EPSILON) / bucketAngleStep));
 					int leftBucket = (rightBucket - 1);
 					double leftBucketCenter = leftBucket*bucketAngleStep + halfBucketAngleStep;
 					double leftBucketValuePart = 1 - abs(fi - leftBucketCenter) / bucketAngleStep;
-					int leftBucketIndex = (cellY*gridSize + cellX)*buckets + (leftBucket + buckets) % buckets;
+					int descriptorOffset = (cellY*gridSize + cellX)*buckets;
+					int leftBucketIndex = descriptorOffset + (leftBucket + buckets) % buckets;
 					double totalWeight = gridInterpolationWeightX * gridInterpolationWeightY * gaussWeight;
 					descriptorValues[leftBucketIndex] += leftBucketValuePart *totalWeight * derivativeLength;
 					double rightValuePart = 1 - leftBucketValuePart;
-					int rightBucketIndex = (cellY*gridSize + cellX)*buckets + rightBucket%buckets;
+					int rightBucketIndex = descriptorOffset + rightBucket%buckets;
 					descriptorValues[rightBucketIndex] += rightValuePart*totalWeight *derivativeLength;
 				}
 			}
@@ -190,29 +192,59 @@ struct TwoElementsResult
 	int secondElementIndex;
 };
 
-TwoElementsResult FindTwoMaximums(const vector<double>& values)
+pair<double,double> InterpolateQuadratic(double leftValue, double value, double rightValue)
+{
+	double x = 0.5*(leftValue - rightValue) / (leftValue - 2 * value + rightValue);
+	double y = value - 0.25*(leftValue - rightValue)*x;
+	assert(x > -1 - DBL_EPSILON && x < 1 + DBL_EPSILON);
+	return {x,y};
+}
+
+
+
+pair<PointD,PointD> FindTwoLocalMaximums(const vector<double>& values)
 {	
-	double firstMaximum = DBL_MIN;
-	double secondMaximum = DBL_MIN;
-	int firstMaximumIndex = -1;
-	int secondMaximumIndex = -1;
+	double max1Value = DBL_MIN;
+	double max2Value = DBL_MIN;
+	int max1Index = -1;
+	int max2Index = -1;
+	int n = values.size();
 	for (int i = 0; i<values.size(); i++)
 	{
 		double value = values[i];
-		if (value > firstMaximum)
+		double leftValue = values[(i - 1 + n) % n];
+		double rightValue = values[(i + 1) % n];
+		if (value > leftValue && value > rightValue)
 		{
-			secondMaximum = firstMaximum;
-			secondMaximumIndex = firstMaximumIndex;
-			firstMaximum = value;
-			firstMaximumIndex = i;
-		}
-		else if (value > secondMaximum)
-		{
-			secondMaximum = value;
-			secondMaximumIndex = i;
+			if (value > max1Value)
+			{
+				max2Value = max1Value;
+				max2Index = max1Index;
+				max1Value = value;
+				max1Index = i;
+			}
+			else if (value > max2Value)
+			{
+				max2Value = value;
+				max2Index = i;
+			}
 		}
 	}
-	return TwoElementsResult(firstMaximum, firstMaximumIndex, secondMaximum, secondMaximumIndex);
+	double left1Value = values[(max1Index - 1 + n) % n];
+	double right1Value = values[(max1Index + 1 + n) % n];
+	auto accurateShiftValue1 = InterpolateQuadratic(left1Value, max1Value, right1Value);
+	double max1X = fmod(accurateShiftValue1.first + max1Index + n, n);
+	assert(max1X > -DBL_EPSILON && max1X < 36 + DBL_EPSILON);
+	double left2Value = values[(max2Index - 1 + n) % n];
+	double right2Value = values[(max2Index + 1 + n) % n];
+	auto accurateShiftValue2 = InterpolateQuadratic(left2Value, max2Value, right2Value);
+	double max2X = fmod(accurateShiftValue2.first + max2Index + n, n);
+	assert(max2X > -DBL_EPSILON && max2X < 36 + DBL_EPSILON);
+	return
+	{
+		PointD(max1X,accurateShiftValue1.second),
+		PointD(max2X,accurateShiftValue2.second)
+	};
 }
 
 void DescriptorService::AddGradientDirectionDescriptors(
@@ -225,7 +257,7 @@ void DescriptorService::AddGradientDirectionDescriptors(
 	int mainDirectionBuckets)
 {
 	auto& blobLayer = pyramid.LayerAt(blob.octave,blob.layer);
-	double blobStep = round(blobLayer.Sigma())*step;
+	double blobStep = round(blobLayer.Sigma()*step);
 	auto largeGridHistogram = CalculateDescriptorValues(
 		blobLayer.GetImage(),
 		blob.point, 
@@ -233,8 +265,8 @@ void DescriptorService::AddGradientDirectionDescriptors(
 		1,
 		mainDirectionBuckets,
 		0);
-	auto maximums = FindTwoMaximums(largeGridHistogram);
-	auto orientation1 = maximums.firstElementIndex*M_PI * 2 / mainDirectionBuckets;	
+	auto maximums = FindTwoLocalMaximums(largeGridHistogram);
+	auto orientation1 = maximums.first.x*M_PI * 2 / mainDirectionBuckets;	
 	double originalx = pow(2, blob.octave)*blob.point.x;
 	double originaly = pow(2, blob.octave)*blob.point.y;
 	targetDescriptors.push_back(
@@ -252,9 +284,9 @@ void DescriptorService::AddGradientDirectionDescriptors(
 			blobLayer.EffectiveSigma()
 		)
 	);
-	if (maximums.secondElement / maximums.firstElement > Threshold)
+	if (maximums.second.y / maximums.first.y > Threshold)
 	{
-		double orientation2 = maximums.secondElementIndex*M_PI * 2 / mainDirectionBuckets;
+		double orientation2 = maximums.second.x*M_PI * 2 / mainDirectionBuckets;
 		targetDescriptors.push_back(
 			Descriptor(				
 				CalculateDescriptorValues(
@@ -290,7 +322,7 @@ void DescriptorService::AddOldSchoolDescriptors(
 		1,
 		mainDirectionBuckets,
 		0);
-	auto maximums = FindTwoMaximums(largeGridHistogram);
+	auto maximums = FindTwoLocalMaximums(largeGridHistogram);
 	targetDescriptors.push_back(
 		Descriptor(			
 			CalculateDescriptorValues(
@@ -299,12 +331,12 @@ void DescriptorService::AddOldSchoolDescriptors(
 				step,
 				gridSize,
 				buckets,
-				maximums.firstElementIndex*M_PI * 2 / mainDirectionBuckets
+				maximums.first.x*M_PI * 2 / mainDirectionBuckets
 			),
 			point
 		)
 	);
-	if (maximums.secondElement / maximums.firstElement > Threshold)
+	if (maximums.second.y / maximums.first.y > Threshold)
 	{
 		targetDescriptors.push_back(
 			Descriptor(				
@@ -314,7 +346,7 @@ void DescriptorService::AddOldSchoolDescriptors(
 					step,
 					gridSize,
 					buckets,
-					maximums.secondElementIndex*M_PI * 2 / mainDirectionBuckets
+					maximums.second.x*M_PI * 2 / mainDirectionBuckets
 				)
 				,point
 			)
