@@ -139,4 +139,111 @@ POIDetector ImageFramework::CreatePOIDetector(POISearchMethod searchMethod)
 	return POIDetector(searchMethod);
 }
 
+int CalculateDiscreteDirection(double gradient)
+{
+	double pointGradient = gradient;
+	pointGradient += M_PI;//0 to 2PI
+	pointGradient /= M_PI / 8; //0 to 15
+	pointGradient++; //1 to 16			
+	int direction = pointGradient / 2;//0 to 8
+	return direction % 4; //0 to 3
+}
+
+unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, double lowerThreshold, double upperThreshold)
+{
+	auto smoothedImage = ApplyGaussSmooth(image, 1.4);
+	auto sobelX = ApplySobelX(*smoothedImage);
+	auto sobelY = ApplySobelY(*smoothedImage);
+	auto magnitude = Matrix2D(image.Width(), image.Height());
+	auto direction = Matrix2D(image.Width(), image.Height());
+	for (int y = 0; y < image.Height(); y++)
+	{
+		for (int x = 0; x < image.Width(); x++)
+		{
+			double dx = sobelX->At(x, y);
+			double dy = sobelY->At(x, y);
+			magnitude.SetElementAt(x, y, hypot(dx, dy));
+			direction.SetElementAt(x, y, atan2(dy, dx));//-PI to PI
+		}
+	}
+	auto edges = Matrix2D(image.Width(), image.Height());
+	for (int y = 0; y < image.Height(); y++)
+	{
+		for (int x = 0; x < image.Width(); x++)
+		{		
+			double pointGradient = direction.At(x, y);	
+			int pointDirection = CalculateDiscreteDirection(pointGradient) / 2;
+			int dx = pointDirection == 2 ? 0 : 1;
+			int dy = pointDirection == 0 ? 0 : 1;
+			double currentMagnitude = magnitude.GetIntensity(x,y);
+			edges.SetElementAt(x, y,
+				currentMagnitude > upperThreshold &&
+				currentMagnitude > magnitude.GetIntensity(x - dx, y - dy) &&
+				currentMagnitude > magnitude.GetIntensity(x + dx, y + dy));
+		}
+	}
+	vector<bool> notWatchedTrueEdges(image.Width()*image.Height(),true);
+	int width = image.Width();
+	int height = image.Height();
+	bool imageChanged;
+	do
+	{
+		imageChanged = false;
+		for (int y = 0; y < image.Height(); y++)
+		{
+			for (int x = 0; x < image.Width(); x++)
+			{
+				if (!(edges.At(x, y) > DBL_EPSILON))
+				{
+					continue;
+				}
+				if (!(notWatchedTrueEdges[y*width + x]))
+				{
+					continue;
+				}
+				notWatchedTrueEdges[y*width + x] = false;
+				double pointGradient = direction.At(x, y);
+				int pointDirection = CalculateDiscreteDirection(pointGradient);
+				int dx = pointDirection == 2 ? 0 : 1;
+				int dy = pointDirection == 0 ? 0 : 1;
+				int normaldx = dy;
+				int normaldy = dx;
+				int neighbor1x = x - dx;
+				int neighbor1y = y - dy;
+				double neighbor1Magnitude = magnitude.GetIntensity(neighbor1x, neighbor1y);
+				if (CalculateDiscreteDirection(direction.GetIntensity(neighbor1x, neighbor1y)) == pointDirection&&
+					neighbor1x > 0 && neighbor1x < width &&
+					neighbor1y>0 && neighbor1y < height &&
+					neighbor1Magnitude > lowerThreshold&&
+					neighbor1Magnitude > magnitude.GetIntensity(neighbor1x - normaldx, neighbor1y - normaldy) &&
+					neighbor1Magnitude > magnitude.GetIntensity(neighbor1x + normaldx, neighbor1y + normaldy)
+					)
+				{
+					imageChanged = true;
+					edges.SetElementAt(neighbor1x, neighbor1y, 1);
+				}
+
+				int neighbor2x = x + dx;
+				int neighbor2y = y + dy;
+				double neighbor2Magnitude = magnitude.GetIntensity(neighbor2x, neighbor2y);
+
+				if (CalculateDiscreteDirection(direction.GetIntensity(neighbor2x, neighbor2y)) == pointDirection&&
+					neighbor2x > 0 && neighbor2x < width &&
+					neighbor2y > 0 && neighbor2y < height &&
+					neighbor2Magnitude > lowerThreshold&&
+					neighbor2Magnitude > magnitude.GetIntensity(neighbor2x - normaldx, neighbor2y - normaldy) &&
+					neighbor2Magnitude > magnitude.GetIntensity(neighbor2x + normaldx, neighbor2y + normaldy)
+					)
+				{
+					imageChanged = true;
+					edges.SetElementAt(neighbor2x, neighbor2y, 1);
+				}
+			}
+		}		
+	} 
+	while (imageChanged);
+	return make_unique<Matrix2D>(edges);
+
+}
+
 

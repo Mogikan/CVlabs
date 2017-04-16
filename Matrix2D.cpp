@@ -32,6 +32,11 @@ Matrix2D::Matrix2D(const Matrix2D & matrix)
 	this->height = matrix.height;
 }
 
+void Matrix2D::InitWith(double value)
+{
+	transform(elements.begin(), elements.end(), elements.begin(), [value](double el)->double { return value;});
+}
+
 
 double Matrix2D::At(int x, int y) const
 {

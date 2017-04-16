@@ -79,11 +79,12 @@ void MainWindow::ShowImage(QImage image)
 void MainWindow::on_pushButton_4_clicked()
 {//value match
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
-	int octaveCount = log2(min(image->Height(), image->Width()));
-
-	auto pyramid = make_unique<GaussPyramid>(*image, octaveCount);
-	auto& blobs = pyramid->FindBlobs();
-	ShowImage(PlatformImageUtils::DrawImage(*image, blobs));
+	//int octaveCount = log2(min(image->Height(), image->Width()));
+	//
+	//auto pyramid = make_unique<GaussPyramid>(*image, octaveCount);
+	//auto& blobs = pyramid->FindBlobs();
+	//ShowImage(PlatformImageUtils::DrawImage(*image, blobs));
+	ShowImage(PlatformImageUtils::QImageFromInternalImage(*ImageFramework::ApplyCannyOperator(*image)));
 }
 
 void MainWindow::on_pushButton_5_clicked()

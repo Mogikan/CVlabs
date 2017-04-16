@@ -7,6 +7,8 @@
 #include "GaussPyramid.h"
 #include "POIDetector.h"
 #include "Descriptor.h"
+#define _USE_MATH_DEFINES
+#include <math.h>
 class ImageFramework
 {
 public:
@@ -57,4 +59,6 @@ public:
 	static unique_ptr<Matrix2D> DownscaleImageTwice(const Matrix2D& image);
 
 	static POIDetector CreatePOIDetector(POISearchMethod searchMethod);
+
+	static unique_ptr<Matrix2D> ApplyCannyOperator(const Matrix2D& image,double lowerThreshold = 0.1,double upperThreshold = 0.3);
 };

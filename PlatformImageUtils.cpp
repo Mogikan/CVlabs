@@ -7,7 +7,17 @@ PlatformImageUtils::PlatformImageUtils()
 
 QImage PlatformImageUtils::QImageFromInternalImage(const Image& image)
 {
-	return QImage(image.GetRawData(),image.Width(),image.Height(), QImage::Format_Grayscale8);
+	QImage qImage(image.Width(), image.Height(), QImage::Format::Format_RGB32);
+
+	for (int y = 0; y < image.Height(); y++)
+	{
+		for (int x = 0; x < image.Width(); x++)
+		{
+			int color = (int)(image.PixelAt(x, y));
+			qImage.setPixel(x, y, qRgb(color, color, color));
+		}
+	}
+	return qImage;
 }
 
 unique_ptr<Image> PlatformImageUtils::LoadInternalImage(QString qImageFileName)
