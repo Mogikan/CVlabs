@@ -21,7 +21,7 @@ public:
 	const Matrix2D& ImageAt(int octave, int layer) const;
 	const Layer& LayerAt(int octave, int layer) const;
 	double L(int x, int y, double sigma);
-	vector<BlobInfo> FindBlobs();
+	vector<BlobInfo> FindBlobs(double harrisThreshold = 0.035,int windowSize=16);
 	~GaussPyramid();
 private:
 	int octavesCount =0;

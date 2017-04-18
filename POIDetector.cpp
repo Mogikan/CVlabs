@@ -146,16 +146,17 @@ vector<Point> POIDetector::ChoosePeaks(const Matrix2D & contrastMatrix)
 	return result;
 }
 
-double POIDetector::HarrisOperatorValueAt(int x, int y, const Matrix2D & image)
+double POIDetector::HarrisOperatorValueAt(int x, int y, const Matrix2D & image, int regionWindowSize)
 {
 	double operatorValue;
 	Matrix2D H(2, 2);
 	double a = 0;
 	double b = 0;
 	double c = 0;
-	for (int shiftY = -HalfWindowSize(); shiftY <= HalfWindowSize(); shiftY++)
+	int halfRegionWindowSize = regionWindowSize / 2;
+	for (int shiftY = -halfRegionWindowSize; shiftY <= halfRegionWindowSize; shiftY++)
 	{
-		for (int shiftX = -HalfWindowSize(); shiftX <= HalfWindowSize(); shiftX++)
+		for (int shiftX = -halfRegionWindowSize; shiftX <= halfRegionWindowSize; shiftX++)
 		{
 			double pixelDistance = sqrt(shiftX*shiftX + shiftY*shiftY);
 			double weight = MathHelper::ComputeGaussAxesValue(pixelDistance, windowSize / 2 / 3);

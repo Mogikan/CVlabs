@@ -18,7 +18,8 @@ public:
 
 	vector<Descriptor> BuildGradientDirectionDescriptors(
 		const Matrix2D& image, 
-		vector<Point> interestingPoints,
+		const GaussPyramid& pyramid,
+		const vector<BlobInfo>& blobs,
 		int step=4, 
 		int gridSize=4,
 		int buckets = 8,

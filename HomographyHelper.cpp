@@ -3,6 +3,8 @@
 #include <gsl\gsl_linalg.h>
 #include <gsl\gsl_blas.h>
 #include "MathHelper.h"
+#include <random>
+using namespace std;
 HomographyHelper::HomographyHelper()
 {
 }
@@ -19,62 +21,49 @@ bool Contains(unordered_set<int> values, int index)
 }
 
 void InitMatrixA(
-	const vector<pair<Descriptor,Descriptor>>& matches,
-	gsl_matrix& A
-	)
+	const vector<pair<Descriptor, Descriptor>>& matches,
+	gsl_matrix& A,
+	const vector<int>& indexes
+)
 {
-	unordered_set<int> indexes;
-	const int homographyMatchesCount = 4;
-	for (int i = 0; i < homographyMatchesCount; i++)
+	for (int i = 0; i < indexes.size(); i++)
 	{
-		while (true)
-		{
-			int nextIndex = rand() % matches.size();
-			if (!Contains(indexes, nextIndex))
-			{
-				indexes.insert(nextIndex);
+		double x1 = matches[indexes[i]].second.GetPoint().x;
+		double y1 = matches[indexes[i]].second.GetPoint().y;
+		double x2 = matches[indexes[i]].first.GetPoint().x;
+		double y2 = matches[indexes[i]].first.GetPoint().y;
 
-				double x1 = matches[nextIndex].second.GetPoint().x;
-				double y1 = matches[nextIndex].second.GetPoint().y;
-				double x2 = matches[nextIndex].first.GetPoint().x;
-				double y2 = matches[nextIndex].first.GetPoint().y;
+		gsl_matrix_set(&A, i * 2, 0, x1);
+		gsl_matrix_set(&A, i * 2, 1, y1);
+		gsl_matrix_set(&A, i * 2, 2, 1);
+		gsl_matrix_set(&A, i * 2, 3, 0);
+		gsl_matrix_set(&A, i * 2, 4, 0);
+		gsl_matrix_set(&A, i * 2, 5, 0);
+		gsl_matrix_set(&A, i * 2, 6, -x2 * x1);
+		gsl_matrix_set(&A, i * 2, 7, -x2*y1);
+		gsl_matrix_set(&A, i * 2, 8, -x2);
+		gsl_matrix_set(&A, i * 2 + 1, 0, 0);
+		gsl_matrix_set(&A, i * 2 + 1, 1, 0);
+		gsl_matrix_set(&A, i * 2 + 1, 2, 0);
+		gsl_matrix_set(&A, i * 2 + 1, 3, x1);
+		gsl_matrix_set(&A, i * 2 + 1, 4, y1);
+		gsl_matrix_set(&A, i * 2 + 1, 5, 1);
+		gsl_matrix_set(&A, i * 2 + 1, 6, -y2*x1);
+		gsl_matrix_set(&A, i * 2 + 1, 7, -y2*y1);
+		gsl_matrix_set(&A, i * 2 + 1, 8, -y2);
 
-				gsl_matrix_set(&A, i * 2, 0, x1);
-				gsl_matrix_set(&A, i * 2, 1, y1);
-				gsl_matrix_set(&A, i * 2, 2, 1);
-				gsl_matrix_set(&A, i * 2, 3, 0);
-				gsl_matrix_set(&A, i * 2, 4, 0);
-				gsl_matrix_set(&A, i * 2, 5, 0);
-				gsl_matrix_set(&A, i * 2, 6, -x2 * x1);
-				gsl_matrix_set(&A, i * 2, 7, -x2*y1);
-				gsl_matrix_set(&A, i * 2, 8, -x2);
-				gsl_matrix_set(&A, i * 2 + 1, 0, 0);
-				gsl_matrix_set(&A, i * 2 + 1, 1, 0);
-				gsl_matrix_set(&A, i * 2 + 1, 2, 0);
-				gsl_matrix_set(&A, i * 2 + 1, 3, x1);
-				gsl_matrix_set(&A, i * 2 + 1, 4, y1);
-				gsl_matrix_set(&A, i * 2 + 1, 5, 1);
-				gsl_matrix_set(&A, i * 2 + 1, 6, -y2*x1);
-				gsl_matrix_set(&A, i * 2 + 1, 7, -y2*y1);
-				gsl_matrix_set(&A, i * 2 + 1, 8, -y2);
-				break;
-			}
-			else
-			{
-				continue;
-			}
-		}
 	}
 }
 
-int CalculateMatches(const vector<pair<Descriptor, Descriptor>>& matches,
+vector<int> GetInliers(const vector<pair<Descriptor, Descriptor>>& matches,
 	gsl_vector& vector1,
 	gsl_vector& vector2,
 	double threshold,
 	gsl_matrix& H
 	)
 {
-	int positiveMatches = 0;
+	vector<int> inliersIndexes;
+	
 	for (int i = 0; i < matches.size(); i++)
 	{
 		auto point1 = matches[i].second.GetPoint();
@@ -99,10 +88,10 @@ int CalculateMatches(const vector<pair<Descriptor, Descriptor>>& matches,
 		double transformedY = gsl_vector_get(&vector2, 1) / scale;
 		if (hypot(transformedX - x2,transformedY - y2) < threshold)
 		{
-			positiveMatches++;
+			inliersIndexes.push_back(i);
 		}
 	}
-	return positiveMatches;
+	return inliersIndexes;
 }
 
 vector<double> PrepareTransformVector(const gsl_matrix& H)
@@ -123,6 +112,27 @@ vector<double> PrepareTransformVector(const gsl_matrix& H)
 	return result;
 }
 
+void CalculateHomograhy(
+	const vector<pair<Descriptor, Descriptor>>& matches,
+	gsl_matrix& A,
+	const vector<int>& indexes,
+	gsl_matrix& ATA,
+	gsl_matrix& V,
+	gsl_vector& S,
+	gsl_matrix& H,
+	gsl_vector& work
+) 
+{
+	InitMatrixA(matches, A, indexes);
+	gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1., &A, &A, 0., &ATA);
+	gsl_linalg_SV_decomp(&ATA, &V, &S, &work);
+	for (int i = 0; i < 9; i++)
+	{
+		auto value = gsl_matrix_get(&V, i, 8);
+		gsl_matrix_set(&H, i / 3, i % 3, value);
+	}
+}
+
 Matrix2D HomographyHelper::FindBestHomography(
 	const vector<pair<Descriptor, Descriptor>>& matches,
 	int N,
@@ -133,34 +143,39 @@ Matrix2D HomographyHelper::FindBestHomography(
 	{
 		throw "Bad Match";
 	}
-	
-	gsl_matrix * A = gsl_matrix_alloc(8, 9);	
+
+	gsl_matrix * A = gsl_matrix_alloc(8, 9);
 	gsl_matrix * ATA = gsl_matrix_alloc(9, 9);
 	gsl_matrix *V = gsl_matrix_alloc(9, 9);
 	gsl_vector *S = gsl_vector_alloc(9);
-	gsl_vector *work = gsl_vector_alloc(9);	
+	gsl_vector *work = gsl_vector_alloc(9);
 	gsl_matrix *H = gsl_matrix_alloc(3, 3);
 	gsl_vector *vector1 = gsl_vector_alloc(3);
 	gsl_vector *vector2 = gsl_vector_alloc(3);
-	int positiveMatches;
-	pair<vector<double>, int> bestMatching = {vector<double>(),0};	
-	do
+	vector<int> inliers;
+	vector<int> bestMatch;
+	vector<int> indexes;	 
+	for (int i = 0; i < matches.size(); i++)
 	{
-		InitMatrixA(matches, *A);		
-		gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1., A, A, 0., ATA);
-		gsl_linalg_SV_decomp(ATA, V, S, work);
-		for (int i = 0; i < 9; i++)
-		{
-			auto value = gsl_matrix_get(V, i, 8);
-			gsl_matrix_set(H, i / 3, i % 3, value);			
-		}		
-		positiveMatches = CalculateMatches(matches, *vector1, *vector2, threshold,*H);
+		indexes.push_back(i);
+	}
+
+	do
+	{		
+		shuffle(indexes.begin(), indexes.end(), mt19937{});
+		vector<int> random4Points = vector<int>{ indexes[0], indexes[1], indexes[2], indexes[3] };
+		CalculateHomograhy(matches, *A,random4Points ,*ATA,*V,*S,*H,*work);
+		inliers = GetInliers(matches, *vector1, *vector2, threshold,*H);
 		
-		if (bestMatching.second < positiveMatches)
+		if (bestMatch.size() < inliers.size())
 		{					
-			bestMatching = {PrepareTransformVector(*H),positiveMatches};
+			bestMatch = inliers;
 		}
 	} while (0<N--);
+	gsl_matrix_free(A);
+	A = gsl_matrix_alloc(bestMatch.size()*2, 9);
+	CalculateHomograhy(matches, *A, bestMatch, *ATA, *V, *S, *H, *work);
+	auto& bestTransform = PrepareTransformVector(*H);
 	gsl_matrix_free(A);
 	gsl_matrix_free(ATA);
 	gsl_matrix_free(V);
@@ -170,6 +185,6 @@ Matrix2D HomographyHelper::FindBestHomography(
 	gsl_matrix_free(H);
 	gsl_vector_free(vector1);
 	gsl_vector_free(vector2);	
-	return Matrix2D(bestMatching.first,3,3);
+	return Matrix2D(bestTransform,3,3);
 }
 

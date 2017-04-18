@@ -109,7 +109,7 @@ bool IsLocalExtremum(
 	return true;	
 }
 
-vector<BlobInfo> GaussPyramid::FindBlobs()
+vector<BlobInfo> GaussPyramid::FindBlobs(double harrisThreshold,int windowSize)
 {	
 	vector<BlobInfo> result;
 	for (int i = 0;i < octaves.size();i++)
@@ -131,8 +131,8 @@ vector<BlobInfo> GaussPyramid::FindBlobs()
 				{
 					if (IsLocalExtremum(x, y, *previousDiff, *currentDiff,*nextDiff))
 					{
-						double harris = POIDetector::HarrisOperatorValueAt(x, y, octave.LayerAt(j).GetImage());
-						if (harris > POIDetector::HarrisThreshold/2)
+						double harris = POIDetector::HarrisOperatorValueAt(x, y, octave.LayerAt(j).GetImage(), windowSize * octave.LayerAt(j).EffectiveSigma());
+						if (harris > harrisThreshold)
 						{
 							result.push_back(BlobInfo(x, y,i, j, octave.LayerAt(j).EffectiveSigma()));
 						}

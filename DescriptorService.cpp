@@ -46,21 +46,20 @@ vector<Descriptor> DescriptorService::BuildOldSchoolDescriptors(
 
 vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(
 	const Matrix2D & image, 
-	vector<Point> interestingPoints,
+	const GaussPyramid& pyramid,
+	const vector<BlobInfo>& blobs,
 	int step, 
 	int gridSize, 
 	int buckets,
 	int mainDirectionBuckets)
 {
 	vector<Descriptor> descriptors;
-	int octaveCount = log2(min(image.Height(), image.Width()))-1;
-	auto pyramid = make_unique<GaussPyramid>(image, octaveCount);
-	auto blobs = pyramid->FindBlobs();
+	int octaveCount = log2(min(image.Height(), image.Width()))-1;	
 	for (const auto& blob:blobs)
 	{
 		AddGradientDirectionDescriptors(
 			descriptors, 
-			*pyramid,
+			pyramid,
 			blob, 
 			step, 
 			gridSize, 

@@ -10,7 +10,7 @@ public:
 	POIDetector(POISearchMethod searchType);
 	~POIDetector();
 	vector<Point> FindPoints(const Matrix2D& image,bool suppressNonMaximum=false,int leftPointCount=200);
-	static double HarrisOperatorValueAt(int x, int y, const Matrix2D& image);
+	static double HarrisOperatorValueAt(int x, int y, const Matrix2D& image,int regionWindowSize);
 	static double const HarrisThreshold;
 protected:	
 	static double HalfWindowSize() { return windowSize / 2;}	

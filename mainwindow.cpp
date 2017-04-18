@@ -93,11 +93,16 @@ void MainWindow::on_pushButton_5_clicked()
 	auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
 	DescriptorService service;
 	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
-	auto points = detector.FindPoints(*image1);
-	auto points2 = detector.FindPoints(*image2);
+	
+	int octaveCount1 = log2(min(image1->Height(), image1->Width())) - 1;
+	GaussPyramid pyramid1(*image1, octaveCount1);
+	auto& blobs1 = pyramid1.FindBlobs();	
+	auto& descriptors1 = service.BuildGradientDirectionDescriptors(*image1, pyramid1,blobs1);
 
-	auto descriptors1 = service.BuildGradientDirectionDescriptors(*image1, points);
-	auto descriptors2 = service.BuildGradientDirectionDescriptors(*image2, points2);
+	int octaveCount2 = log2(min(image2->Height(), image2->Width())) - 1;
+	GaussPyramid pyramid2(*image2, octaveCount2);
+	auto& blobs2 = pyramid2.FindBlobs();
+	auto& descriptors2 = service.BuildGradientDirectionDescriptors(*image2, pyramid2,blobs2);
 	const vector<pair<Descriptor, Descriptor>>& matches = service.FindMatches(descriptors1, descriptors2);
 	
 	auto& homography = HomographyHelper::FindBestHomography(matches);
