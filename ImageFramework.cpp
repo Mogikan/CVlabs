@@ -149,6 +149,22 @@ int CalculateDiscreteDirection(double gradient)
 	return direction % 4; //0 to 3
 }
 
+pair<int,int> ComputeShift(int discreteDirection) 
+{
+	switch(discreteDirection)
+	{
+	case 0:
+		return { -1,0 };
+	case 1:
+		return {-1,-1};
+	case 2:
+		return {0,-1};
+	case 3:
+		return {1, -1};
+	}
+}
+
+
 unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, double lowerThreshold, double upperThreshold)
 {
 	auto smoothedImage = ApplyGaussSmooth(image, 1.4);
@@ -167,14 +183,15 @@ unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, 
 		}
 	}
 	auto edges = Matrix2D(image.Width(), image.Height());
+	int dx;
+	int dy;
 	for (int y = 0; y < image.Height(); y++)
 	{
 		for (int x = 0; x < image.Width(); x++)
 		{		
 			double pointGradient = direction.At(x, y);	
-			int pointDirection = CalculateDiscreteDirection(pointGradient) / 2;
-			int dx = pointDirection == 2 ? 0 : 1;
-			int dy = pointDirection == 0 ? 0 : 1;
+			int pointDirection = CalculateDiscreteDirection(pointGradient);
+			tie(dx, dy) = ComputeShift(pointDirection);
 			double currentMagnitude = magnitude.GetIntensity(x,y);
 			edges.SetElementAt(x, y,
 				currentMagnitude > upperThreshold &&
@@ -182,7 +199,7 @@ unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, 
 				currentMagnitude > magnitude.GetIntensity(x + dx, y + dy));
 		}
 	}
-	vector<bool> notWatchedTrueEdges(image.Width()*image.Height(),true);
+	vector<bool> watchedTrueEdges(image.Width()*image.Height(),false);
 	int width = image.Width();
 	int height = image.Height();
 	bool imageChanged;
@@ -193,46 +210,45 @@ unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, 
 		{
 			for (int x = 0; x < image.Width(); x++)
 			{
-				if (!(edges.At(x, y) > DBL_EPSILON))
+				if (edges.At(x, y) < DBL_EPSILON)
 				{
 					continue;
 				}
-				if (!(notWatchedTrueEdges[y*width + x]))
+				if (watchedTrueEdges[y*width + x])
 				{
 					continue;
 				}
-				notWatchedTrueEdges[y*width + x] = false;
+				watchedTrueEdges[y*width + x] = true;
 				double pointGradient = direction.At(x, y);
 				int pointDirection = CalculateDiscreteDirection(pointGradient);
-				int dx = pointDirection == 2 ? 0 : 1;
-				int dy = pointDirection == 0 ? 0 : 1;
+				tie(dx, dy) = ComputeShift(pointDirection);
 				int normaldx = dy;
-				int normaldy = dx;
-				int neighbor1x = x - dx;
-				int neighbor1y = y - dy;
+				int normaldy = -dx;
+				int neighbor1x = x - normaldx;
+				int neighbor1y = y - normaldy;
 				double neighbor1Magnitude = magnitude.GetIntensity(neighbor1x, neighbor1y);
 				if (CalculateDiscreteDirection(direction.GetIntensity(neighbor1x, neighbor1y)) == pointDirection&&
 					neighbor1x > 0 && neighbor1x < width &&
 					neighbor1y>0 && neighbor1y < height &&
 					neighbor1Magnitude > lowerThreshold&&
-					neighbor1Magnitude > magnitude.GetIntensity(neighbor1x - normaldx, neighbor1y - normaldy) &&
-					neighbor1Magnitude > magnitude.GetIntensity(neighbor1x + normaldx, neighbor1y + normaldy)
+					neighbor1Magnitude > magnitude.GetIntensity(neighbor1x - dx, neighbor1y - dy) &&
+					neighbor1Magnitude > magnitude.GetIntensity(neighbor1x + dx, neighbor1y + dy)
 					)
 				{
 					imageChanged = true;
 					edges.SetElementAt(neighbor1x, neighbor1y, 1);
 				}
 
-				int neighbor2x = x + dx;
-				int neighbor2y = y + dy;
+				int neighbor2x = x + normaldx;
+				int neighbor2y = y + normaldy;
 				double neighbor2Magnitude = magnitude.GetIntensity(neighbor2x, neighbor2y);
 
 				if (CalculateDiscreteDirection(direction.GetIntensity(neighbor2x, neighbor2y)) == pointDirection&&
 					neighbor2x > 0 && neighbor2x < width &&
 					neighbor2y > 0 && neighbor2y < height &&
 					neighbor2Magnitude > lowerThreshold&&
-					neighbor2Magnitude > magnitude.GetIntensity(neighbor2x - normaldx, neighbor2y - normaldy) &&
-					neighbor2Magnitude > magnitude.GetIntensity(neighbor2x + normaldx, neighbor2y + normaldy)
+					neighbor2Magnitude > magnitude.GetIntensity(neighbor2x - dx, neighbor2y - dy) &&
+					neighbor2Magnitude > magnitude.GetIntensity(neighbor2x + dx, neighbor2y + dy)
 					)
 				{
 					imageChanged = true;
