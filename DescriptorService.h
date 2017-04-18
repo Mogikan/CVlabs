@@ -35,7 +35,7 @@ public:
 		Descriptor descriptor2);
 
 
-	vector<Descriptor> DescriptorService::BuildOldSchoolDescriptors(
+	vector<Descriptor> DescriptorService::BuildRotationInvariantDescriptors(
 		const Matrix2D & image,
 		vector<Point> interestingPoints,
 		int step = 4,
@@ -58,7 +58,7 @@ private:
 		int buckets, 
 		int mainDirectionBuckets);	
 
-	void AddOldSchoolDescriptors(
+	void AddRotationInvariantDescriptors(
 		vector<Descriptor>& targetDescriptors,
 		const Matrix2D& image,
 		Point point,

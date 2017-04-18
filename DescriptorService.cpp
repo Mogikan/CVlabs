@@ -28,7 +28,7 @@ vector<Descriptor> DescriptorService::BuildAverageValueDescriptors(
 	return descriptors;
 }
 
-vector<Descriptor> DescriptorService::BuildOldSchoolDescriptors(
+vector<Descriptor> DescriptorService::BuildRotationInvariantDescriptors(
 	const Matrix2D & image,
 	vector<Point> interestingPoints,
 	int step,
@@ -39,7 +39,7 @@ vector<Descriptor> DescriptorService::BuildOldSchoolDescriptors(
 	vector<Descriptor> descriptors;
 	for (Point point : interestingPoints)
 	{
-		AddOldSchoolDescriptors(descriptors, image, point, step, gridSize, buckets, mainDirectionBuckets);
+		AddRotationInvariantDescriptors(descriptors, image, point, step, gridSize, buckets, mainDirectionBuckets);
 	}
 	return descriptors;
 }
@@ -115,7 +115,8 @@ vector<double> CalculateDescriptorValues(
 			double gridDX = pixelX - centerX;
 			double gridDY = pixelY - centerY;
 			double pixelDistance = sqrt(gridDX*gridDX + gridDY*gridDY);
-			double gaussWeight = MathHelper::ComputeGaussAxesValue(pixelDistance, gridSize*step / 3./2.);
+			double gaussWeight = 
+				MathHelper::ComputeGaussAxesValue(pixelDistance, gridSize*step / 3./2.);
 			double rotatedDX = gridDX*cos(angle) + gridDY*sin(angle);
 			double rotatedDY = gridDY*cos(angle) - gridDX*sin(angle);
 			
@@ -304,7 +305,7 @@ void DescriptorService::AddGradientDirectionDescriptors(
 	}	
 }
 
-void DescriptorService::AddOldSchoolDescriptors(
+void DescriptorService::AddRotationInvariantDescriptors(
 	vector<Descriptor>& targetDescriptors,
 	const Matrix2D& image,	
 	Point point,
