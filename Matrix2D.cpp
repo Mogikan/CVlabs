@@ -187,6 +187,11 @@ Matrix2D::~Matrix2D()
 
 unique_ptr<Matrix2D> Matrix2D::operator-(const Matrix2D & secondMatrix) const
 {
+	if (this->Width() != secondMatrix.Width()
+		|| this->Height() != secondMatrix.Height())
+	{
+		throw "Matrix dimensions do not match";
+	}
 	vector<double> result(this->width*this->height);
 	auto& first = this->ExtractData();
 	auto& second = secondMatrix.ExtractData();

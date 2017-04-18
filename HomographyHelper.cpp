@@ -159,11 +159,14 @@ Matrix2D HomographyHelper::FindBestHomography(
 	{
 		indexes.push_back(i);
 	}
-
+	vector<int> random4Points(4);
 	do
 	{		
 		shuffle(indexes.begin(), indexes.end(), mt19937{});
-		vector<int> random4Points = vector<int>{ indexes[0], indexes[1], indexes[2], indexes[3] };
+		random4Points[0] = indexes[0];
+		random4Points[1] = indexes[1];
+		random4Points[2] = indexes[2];
+		random4Points[3] = indexes[3];			
 		CalculateHomograhy(matches, *A,random4Points ,*ATA,*V,*S,*H,*work);
 		inliers = GetInliers(matches, *vector1, *vector2, threshold,*H);
 		
