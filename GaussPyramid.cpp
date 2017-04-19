@@ -120,7 +120,6 @@ vector<BlobInfo> GaussPyramid::FindBlobs(double harrisThreshold,int windowSize)
 		{
 			auto& previousDiff = diffs[j - 1];
 			auto& currentDiff = diffs[j];
-			//tie(minDiffValue, maxDiffValue) = currentDiff->MinMax();
 			auto& nextDiff = diffs[j + 1];
 			//PlatformImageUtils::SaveImage(Image(*(currentDiff.first)),
 			//	"C:\\Pyramid\\Octave_" + QString::number(i) + "_Layer_" + QString::number(j) + ".png");		
@@ -131,7 +130,12 @@ vector<BlobInfo> GaussPyramid::FindBlobs(double harrisThreshold,int windowSize)
 				{
 					if (IsLocalExtremum(x, y, *previousDiff, *currentDiff,*nextDiff))
 					{
-						double harris = POIDetector::HarrisOperatorValueAt(x, y, octave.LayerAt(j).GetImage(), windowSize * octave.LayerAt(j).EffectiveSigma());
+						double harris = 
+							POIDetector::HarrisOperatorValueAt(
+							x, 
+							y, 
+							octave.LayerAt(j).GetImage(),
+							windowSize * octave.LayerAt(j).EffectiveSigma()/sigma0);
 						if (harris > harrisThreshold)
 						{
 							result.push_back(BlobInfo(x, y,i, j, octave.LayerAt(j).EffectiveSigma()));
@@ -142,6 +146,11 @@ vector<BlobInfo> GaussPyramid::FindBlobs(double harrisThreshold,int windowSize)
 		}		
 	}
 	return result;
+}
+
+int GaussPyramid::GetSigma0() const
+{
+	return sigma0;
 }
 
 GaussPyramid::~GaussPyramid()

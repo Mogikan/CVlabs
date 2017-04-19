@@ -22,8 +22,7 @@ public:
 	static QImage DrawImage(
 		const Matrix2D& image1, 
 		const Matrix2D& image2, 
-		vector<pair<Descriptor, Descriptor>> matches, 
-		int secondImageXShift);
+		vector<pair<Descriptor, Descriptor>> matches);
 	static QImage DrawImage(const Matrix2D& image1, vector<Point> points);
 	static QImage DrawImage(const Matrix2D& image, vector<BlobInfo> blobs);
 	static QImage CombineImages(const QImage& image1, const QImage& image2, const Matrix2D& t);

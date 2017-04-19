@@ -78,13 +78,32 @@ void MainWindow::ShowImage(QImage image)
 
 void MainWindow::on_pushButton_4_clicked()
 {//value match
-	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
+	//auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
 	//int octaveCount = log2(min(image->Height(), image->Width()));
 	//
 	//auto pyramid = make_unique<GaussPyramid>(*image, octaveCount);
 	//auto& blobs = pyramid->FindBlobs();
 	//ShowImage(PlatformImageUtils::DrawImage(*image, blobs));
-	ShowImage(PlatformImageUtils::QImageFromInternalImage(*ImageFramework::ApplyCannyOperator(*image)));
+	//ShowImage(PlatformImageUtils::QImageFromInternalImage(*ImageFramework::ApplyCannyOperator(*image)));
+
+	auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
+	auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
+	DescriptorService service;
+	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
+
+	int octaveCount1 = log2(min(image1->Height(), image1->Width())) - 1;
+	GaussPyramid pyramid1(*image1, octaveCount1);
+	auto& blobs1 = pyramid1.FindBlobs();
+	auto& descriptors1 = service.BuildGradientDirectionDescriptors(*image1, pyramid1, blobs1);
+
+	int octaveCount2 = log2(min(image2->Height(), image2->Width())) - 1;
+	GaussPyramid pyramid2(*image2, octaveCount2);
+	auto& blobs2 = pyramid2.FindBlobs();
+	auto& descriptors2 = service.BuildGradientDirectionDescriptors(*image2, pyramid2, blobs2);
+	const vector<pair<Descriptor, Descriptor>>& matches = service.FindMatches(descriptors1, descriptors2);
+
+	
+	ShowImage(PlatformImageUtils::DrawImage(*image1, *image2, matches));
 }
 
 void MainWindow::on_pushButton_5_clicked()

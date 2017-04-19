@@ -257,7 +257,7 @@ void DescriptorService::AddGradientDirectionDescriptors(
 	int mainDirectionBuckets)
 {
 	auto& blobLayer = pyramid.LayerAt(blob.octave,blob.layer);
-	double blobStep = round(blobLayer.Sigma()*step);
+	double blobStep = round(blobLayer.Sigma()/pyramid.GetSigma0()*step);
 	auto largeGridHistogram = CalculateDescriptorValues(
 		blobLayer.GetImage(),
 		blob.point, 

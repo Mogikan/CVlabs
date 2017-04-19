@@ -158,9 +158,9 @@ void DrawPoints(const vector<pair<Point, Point>>& matches, QImage& qImage,int wi
 QImage PlatformImageUtils::DrawImage(
 	const Matrix2D& image1,
 	const Matrix2D& image2, 
-	vector<pair<Descriptor, Descriptor>> matches,
-	int secondImageXShift)
+	vector<pair<Descriptor, Descriptor>> matches)
 {
+	int secondImageXShift = image1.Width();
 	auto resultImage = Matrix2D(image1.Width() + image2.Width(), std::max(image1.Height(), image2.Height()));
 	for (int y = 0; y < image1.Height(); y++)
 	{
