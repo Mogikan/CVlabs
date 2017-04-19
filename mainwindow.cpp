@@ -90,12 +90,12 @@ void MainWindow::on_pushButton_4_clicked()
 	auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
 	DescriptorService service;
 	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
-
+	
 	int octaveCount1 = log2(min(image1->Height(), image1->Width())) - 1;
 	GaussPyramid pyramid1(*image1, octaveCount1);
 	auto& blobs1 = pyramid1.FindBlobs();
 	auto& descriptors1 = service.BuildGradientDirectionDescriptors(*image1, pyramid1, blobs1);
-
+	
 	int octaveCount2 = log2(min(image2->Height(), image2->Width())) - 1;
 	GaussPyramid pyramid2(*image2, octaveCount2);
 	auto& blobs2 = pyramid2.FindBlobs();

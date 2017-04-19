@@ -164,44 +164,46 @@ pair<int,int> ComputeShift(int discreteDirection)
 	}
 }
 
-
-unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, double lowerThreshold, double upperThreshold)
+Matrix2D BuildTrueEdges(
+	const Matrix2D& image,
+	const Matrix2D& direction,
+	const Matrix2D& magnitude,
+	double upperThreshold
+)
 {
-	auto smoothedImage = ApplyGaussSmooth(image, 1.4);
-	auto sobelX = ApplySobelX(*smoothedImage);
-	auto sobelY = ApplySobelY(*smoothedImage);
-	auto magnitude = Matrix2D(image.Width(), image.Height());
-	auto direction = Matrix2D(image.Width(), image.Height());
-	for (int y = 0; y < image.Height(); y++)
-	{
-		for (int x = 0; x < image.Width(); x++)
-		{
-			double dx = sobelX->At(x, y);
-			double dy = sobelY->At(x, y);
-			magnitude.SetElementAt(x, y, hypot(dx, dy));
-			direction.SetElementAt(x, y, atan2(dy, dx));//-PI to PI
-		}
-	}
-	auto edges = Matrix2D(image.Width(), image.Height());
+	Matrix2D edges(image.Width(), image.Height());
 	int dx;
 	int dy;
 	for (int y = 0; y < image.Height(); y++)
 	{
 		for (int x = 0; x < image.Width(); x++)
-		{		
-			double pointGradient = direction.At(x, y);	
+		{
+			double pointGradient = direction.At(x, y);
 			int pointDirection = CalculateDiscreteDirection(pointGradient);
 			tie(dx, dy) = ComputeShift(pointDirection);
-			double currentMagnitude = magnitude.GetIntensity(x,y);
+			double currentMagnitude = magnitude.GetIntensity(x, y);
 			edges.SetElementAt(x, y,
 				currentMagnitude > upperThreshold &&
 				currentMagnitude > magnitude.GetIntensity(x - dx, y - dy) &&
 				currentMagnitude > magnitude.GetIntensity(x + dx, y + dy));
 		}
 	}
-	vector<bool> watchedTrueEdges(image.Width()*image.Height(),false);
+	return edges;
+}
+
+void RestoreMissingEdges(
+	Matrix2D& edges,
+	const Matrix2D& image,
+	const Matrix2D& direction,
+	const Matrix2D& magnitude,
+	double lowerThreshold
+) 
+{
+	vector<bool> watchedTrueEdges(image.Width()*image.Height(), false);
 	int width = image.Width();
 	int height = image.Height();
+	int dx;
+	int dy;
 	bool imageChanged;
 	do
 	{
@@ -227,7 +229,8 @@ unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, 
 				int neighbor1x = x - normaldx;
 				int neighbor1y = y - normaldy;
 				double neighbor1Magnitude = magnitude.GetIntensity(neighbor1x, neighbor1y);
-				if (CalculateDiscreteDirection(direction.GetIntensity(neighbor1x, neighbor1y)) == pointDirection&&
+				if (CalculateDiscreteDirection(direction.GetIntensity(neighbor1x, neighbor1y)) 
+					== pointDirection&&
 					neighbor1x > 0 && neighbor1x < width &&
 					neighbor1y>0 && neighbor1y < height &&
 					neighbor1Magnitude > lowerThreshold&&
@@ -243,7 +246,8 @@ unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, 
 				int neighbor2y = y + normaldy;
 				double neighbor2Magnitude = magnitude.GetIntensity(neighbor2x, neighbor2y);
 
-				if (CalculateDiscreteDirection(direction.GetIntensity(neighbor2x, neighbor2y)) == pointDirection&&
+				if (CalculateDiscreteDirection(direction.GetIntensity(neighbor2x, neighbor2y)) 
+					== pointDirection&&
 					neighbor2x > 0 && neighbor2x < width &&
 					neighbor2y > 0 && neighbor2y < height &&
 					neighbor2Magnitude > lowerThreshold&&
@@ -255,11 +259,33 @@ unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, 
 					edges.SetElementAt(neighbor2x, neighbor2y, 1);
 				}
 			}
-		}		
-	} 
-	while (imageChanged);
-	return make_unique<Matrix2D>(edges);
+		}
+	} while (imageChanged);
+}
 
+
+unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, double lowerThreshold, double upperThreshold)
+{
+	auto smoothedImage = ApplyGaussSmooth(image, 1.4);
+	auto sobelX = ApplySobelX(*smoothedImage);
+	auto sobelY = ApplySobelY(*smoothedImage);
+	auto magnitude = Matrix2D(image.Width(), image.Height());
+	auto direction = Matrix2D(image.Width(), image.Height());
+	for (int y = 0; y < image.Height(); y++)
+	{
+		for (int x = 0; x < image.Width(); x++)
+		{
+			double dx = sobelX->At(x, y);
+			double dy = sobelY->At(x, y);
+			magnitude.SetElementAt(x, y, hypot(dx, dy));
+			direction.SetElementAt(x, y, atan2(dy, dx));//-PI to PI
+		}
+	}
+	
+	auto edges = BuildTrueEdges(*smoothedImage,direction,magnitude,upperThreshold);
+	RestoreMissingEdges(edges,*smoothedImage, direction, magnitude, lowerThreshold);
+	
+	return make_unique<Matrix2D>(edges);
 }
 
 
