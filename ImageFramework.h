@@ -60,5 +60,14 @@ public:
 
 	static POIDetector CreatePOIDetector(POISearchMethod searchMethod);
 
-	static unique_ptr<Matrix2D> ApplyCannyOperator(const Matrix2D& image,double lowerThreshold = 0.1,double upperThreshold = 0.3);
+	static unique_ptr<Matrix2D> ApplyCannyOperator(
+		const Matrix2D& image,
+		double lowerThreshold = 0.1,
+		double upperThreshold = 0.3);
+
+	static unique_ptr<Matrix2D> ApplyCannyOperator(
+		const Matrix2D& direction,
+		const Matrix2D& magnitude,
+		double lowerThreshold = 0.1,
+		double upperThreshold = 0.3);
 };

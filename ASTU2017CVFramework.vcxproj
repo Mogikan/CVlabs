@@ -155,6 +155,7 @@
     <ClCompile Include="GeneratedFiles\Release\moc_mainwindow.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="HoughTransform.cpp" />
     <ClCompile Include="ImageFramework.cpp" />
     <ClCompile Include="Kernel.cpp" />
     <ClCompile Include="Layer.cpp" />
@@ -175,6 +176,7 @@
     <ClInclude Include="DescriptorService.h" />
     <ClInclude Include="GaussPyramid.h" />
     <ClInclude Include="GeneratedFiles\ui_mainwindow.h" />
+    <ClInclude Include="HoughTransform.h" />
     <ClInclude Include="ImageFramework.h" />
     <ClInclude Include="Kernel.h" />
     <ClInclude Include="Layer.h" />

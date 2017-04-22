@@ -164,19 +164,18 @@ pair<int,int> ComputeShift(int discreteDirection)
 	}
 }
 
-Matrix2D BuildTrueEdges(
-	const Matrix2D& image,
+Matrix2D BuildTrueEdges(	
 	const Matrix2D& direction,
 	const Matrix2D& magnitude,
 	double upperThreshold
 )
 {
-	Matrix2D edges(image.Width(), image.Height());
+	Matrix2D edges(direction.Width(), direction.Height());
 	int dx;
 	int dy;
-	for (int y = 0; y < image.Height(); y++)
+	for (int y = 0; y < direction.Height(); y++)
 	{
-		for (int x = 0; x < image.Width(); x++)
+		for (int x = 0; x < direction.Width(); x++)
 		{
 			double pointGradient = direction.At(x, y);
 			int pointDirection = CalculateDiscreteDirection(pointGradient);
@@ -192,25 +191,24 @@ Matrix2D BuildTrueEdges(
 }
 
 void RestoreMissingEdges(
-	Matrix2D& edges,
-	const Matrix2D& image,
+	Matrix2D& edges,	
 	const Matrix2D& direction,
 	const Matrix2D& magnitude,
 	double lowerThreshold
 ) 
 {
-	vector<bool> watchedTrueEdges(image.Width()*image.Height(), false);
-	int width = image.Width();
-	int height = image.Height();
+	int width = edges.Width();
+	int height = edges.Height();
+	vector<bool> watchedTrueEdges(width * height, false);	
 	int dx;
 	int dy;
 	bool imageChanged;
 	do
 	{
 		imageChanged = false;
-		for (int y = 0; y < image.Height(); y++)
+		for (int y = 0; y < height; y++)
 		{
-			for (int x = 0; x < image.Width(); x++)
+			for (int x = 0; x < width; x++)
 			{
 				if (edges.At(x, y) < DBL_EPSILON)
 				{
@@ -264,7 +262,10 @@ void RestoreMissingEdges(
 }
 
 
-unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, double lowerThreshold, double upperThreshold)
+unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(
+	const Matrix2D & image, 
+	double lowerThreshold, 
+	double upperThreshold)
 {
 	auto smoothedImage = ApplyGaussSmooth(image, 1.4);
 	auto sobelX = ApplySobelX(*smoothedImage);
@@ -281,10 +282,14 @@ unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & image, 
 			direction.SetElementAt(x, y, atan2(dy, dx));//-PI to PI
 		}
 	}
-	
-	auto edges = BuildTrueEdges(*smoothedImage,direction,magnitude,upperThreshold);
-	RestoreMissingEdges(edges,*smoothedImage, direction, magnitude, lowerThreshold);
-	
+	return ApplyCannyOperator(direction, magnitude, lowerThreshold, upperThreshold);
+}
+
+unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & direction, const Matrix2D & magnitude, double lowerThreshold, double upperThreshold)
+{
+	auto edges = BuildTrueEdges(direction, magnitude, upperThreshold);
+	RestoreMissingEdges(edges, direction, magnitude, lowerThreshold);
+
 	return make_unique<Matrix2D>(edges);
 }
 
