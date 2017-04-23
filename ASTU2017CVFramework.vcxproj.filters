@@ -101,7 +101,7 @@
     <ClCompile Include="HomographyHelper.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="HoughTransform.cpp">
+    <ClCompile Include="HoughFeatureExtractor.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -178,7 +178,10 @@
     <ClInclude Include="PointD.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="HoughTransform.h">
+    <ClInclude Include="HoughFeatureExtractor.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Ellipse.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

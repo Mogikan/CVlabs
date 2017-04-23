@@ -208,6 +208,24 @@ QImage PlatformImageUtils::DrawImage(const Matrix2D & image1, vector<BlobInfo> b
 	return qImage;
 }
 
+void PlatformImageUtils::DrawLines(QImage& image, vector<vector<Point>> points)
+{
+	QPainter painter(&image);
+	for (int i = 0; i < points.size(); i++)
+	{
+		auto& line = points[i];
+		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
+		painter.setPen(color);
+		
+		for (int j = 0; j < line.size()-1; j++)
+		{
+			auto& point1 = line[j];
+			auto& point2 = line[j + 1];
+			painter.drawLine(point1.x, point1.y, point2.x, point2.y);
+		}
+	}
+}
+
 QImage PlatformImageUtils::DrawImage(const Matrix2D & image1, vector<Point> points)
 {
 	auto resultImage = Matrix2D(image1.Width(), image1.Height());

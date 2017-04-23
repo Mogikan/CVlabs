@@ -9,6 +9,7 @@
 #include "DescriptorService.h"
 #include "HomographyHelper.h"
 #include <memory>
+#include "HoughFeatureExtractor.h"
 using namespace std;
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -78,32 +79,53 @@ void MainWindow::ShowImage(QImage image)
 
 void MainWindow::on_pushButton_4_clicked()
 {//value match
-	//auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
+	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
 	//int octaveCount = log2(min(image->Height(), image->Width()));
 	//
 	//auto pyramid = make_unique<GaussPyramid>(*image, octaveCount);
 	//auto& blobs = pyramid->FindBlobs();
 	//ShowImage(PlatformImageUtils::DrawImage(*image, blobs));
-	//ShowImage(PlatformImageUtils::QImageFromInternalImage(*ImageFramework::ApplyCannyOperator(*image)));
+	auto smoothedImage = ImageFramework::ApplyGaussSmooth(*image, 1.4);
+	auto sobelX = ImageFramework::ApplySobelX(*smoothedImage);
+	auto sobelY = ImageFramework::ApplySobelY(*smoothedImage);
+	auto magnitude = Matrix2D(image->Width(), image->Height());
+	auto direction = Matrix2D(image->Width(), image->Height());
+	for (int y = 0; y < image->Height(); y++)
+	{
+		for (int x = 0; x < image->Width(); x++)
+		{
+			double dx = sobelX->At(x, y);
+			double dy = sobelY->At(x, y);
+			magnitude.SetElementAt(x, y, hypot(dx, dy));
+			direction.SetElementAt(x, y, atan2(dy, dx));//-PI to PI
+		}
+	}
+	auto edges = ImageFramework::ApplyCannyOperator(direction, magnitude);
+	//auto& points = HoughFeatureExtractor::FindLines(*edges, magnitude, direction);
+	auto& points = HoughFeatureExtractor::FindEllipses(*edges, magnitude, direction);
 
-	auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
-	auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
-	DescriptorService service;
-	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
-	
-	int octaveCount1 = log2(min(image1->Height(), image1->Width())) - 1;
-	GaussPyramid pyramid1(*image1, octaveCount1);
-	auto& blobs1 = pyramid1.FindBlobs();
-	auto& descriptors1 = service.BuildGradientDirectionDescriptors(*image1, pyramid1, blobs1);
-	
-	int octaveCount2 = log2(min(image2->Height(), image2->Width())) - 1;
-	GaussPyramid pyramid2(*image2, octaveCount2);
-	auto& blobs2 = pyramid2.FindBlobs();
-	auto& descriptors2 = service.BuildGradientDirectionDescriptors(*image2, pyramid2, blobs2);
-	const vector<pair<Descriptor, Descriptor>>& matches = service.FindMatches(descriptors1, descriptors2);
+	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
+	PlatformImageUtils::DrawLines(imageWithLines, points);
+	ShowImage(imageWithLines);
 
-	
-	ShowImage(PlatformImageUtils::DrawImage(*image1, *image2, matches));
+	//auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
+	//auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
+	//DescriptorService service;
+	//auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
+	//
+	//int octaveCount1 = log2(min(image1->Height(), image1->Width())) - 1;
+	//GaussPyramid pyramid1(*image1, octaveCount1);
+	//auto& blobs1 = pyramid1.FindBlobs();
+	//auto& descriptors1 = service.BuildGradientDirectionDescriptors(*image1, pyramid1, blobs1);
+	//
+	//int octaveCount2 = log2(min(image2->Height(), image2->Width())) - 1;
+	//GaussPyramid pyramid2(*image2, octaveCount2);
+	//auto& blobs2 = pyramid2.FindBlobs();
+	//auto& descriptors2 = service.BuildGradientDirectionDescriptors(*image2, pyramid2, blobs2);
+	//const vector<pair<Descriptor, Descriptor>>& matches = service.FindMatches(descriptors1, descriptors2);
+	//
+	//
+	//ShowImage(PlatformImageUtils::DrawImage(*image1, *image2, matches));
 }
 
 void MainWindow::on_pushButton_5_clicked()

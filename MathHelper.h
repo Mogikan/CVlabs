@@ -4,6 +4,7 @@
 #include "Matrix2D.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+static double Sqr(double a) { return a*a; }
 class MathHelper
 {
 public:

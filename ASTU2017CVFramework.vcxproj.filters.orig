@@ -71,17 +71,14 @@
     <ClCompile Include="Kernel.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
-<<<<<<< Updated upstream
+    <ClCompile Include="DebugHelper.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
     <ClCompile Include="Matrix2D.cpp">
+      <Filter>Generated Files\Debug</Filter>
+    </ClCompile>
+    <ClCompile Include="Layer.cpp">
       <Filter>Generated Files</Filter>
-    </ClCompile>
-    <ClCompile Include="DebugHelper.cpp">
-=======
-    <ClCompile Include="DebugHelper.cpp">
-      <Filter>Generated Files\Debug</Filter>
-    </ClCompile>
-    <ClCompile Include="Matrix2D.cpp">
-      <Filter>Generated Files\Debug</Filter>
     </ClCompile>
     <ClCompile Include="GaussPyramid.cpp">
       <Filter>Generated Files</Filter>
@@ -89,7 +86,25 @@
     <ClCompile Include="Octave.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="Layer.cpp">
+    <ClCompile Include="POIDetector.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="MathHelper.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Descriptor.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="DescriptorService.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="HomographyHelper.cpp">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+<<<<<<< Updated upstream
+    <ClCompile Include="HoughTransform.cpp">
+=======
+    <ClCompile Include="HoughFeatureExtractor.cpp">
 >>>>>>> Stashed changes
       <Filter>Generated Files</Filter>
     </ClCompile>
@@ -128,16 +143,16 @@
     <ClInclude Include="Kernel.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-<<<<<<< Updated upstream
-    <ClInclude Include="Matrix2D.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
-    <ClInclude Include="DebugHelper.h">
-=======
     <ClInclude Include="DebugHelper.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="Matrix2D.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Layer.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Point.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="GaussPyramid.h">
@@ -146,7 +161,31 @@
     <ClInclude Include="Octave.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="Layer.h">
+    <ClInclude Include="POIDetector.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MathHelper.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Descriptor.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorService.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BlobInfo.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="HomographyHelper.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="PointD.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+<<<<<<< Updated upstream
+    <ClInclude Include="HoughTransform.h">
+=======
+    <ClInclude Include="HoughFeatureExtractor.h">
 >>>>>>> Stashed changes
       <Filter>Generated Files</Filter>
     </ClInclude>

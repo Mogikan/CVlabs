@@ -25,6 +25,7 @@ public:
 		vector<pair<Descriptor, Descriptor>> matches);
 	static QImage DrawImage(const Matrix2D& image1, vector<Point> points);
 	static QImage DrawImage(const Matrix2D& image, vector<BlobInfo> blobs);
+	static void DrawLines(QImage& image, vector<vector<Point>> points);
 	static QImage CombineImages(const QImage& image1, const QImage& image2, const Matrix2D& t);
 	static QImage LoadQImageFromFile(QString filePath);
 private:
