@@ -52,6 +52,66 @@ vector<vector<Point>> HoughFeatureExtractor::FindLines(const Matrix2D & edges, c
 	return result;
 }
 
+vector<vector<Point>> HoughFeatureExtractor::FindCircles(const Matrix2D & edges, const Matrix2D & magnitude, const Matrix2D & directions,int rMin, int rMax)
+{
+	int width = edges.Width();
+	int height = edges.Height();
+	double angle;
+	double dx;
+	double dy;
+	if (rMax > width / 2.)
+	{
+		rMax = width / 2. - 1;
+	}
+	boost::multi_array<vector<Point>, 3> ellipseParametersSpace(boost::extents[width][height][rMax - rMin]);
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			if (edges.At(x, y) > 0)
+			{
+				angle = directions.At(x, y);
+				dx = cos(angle);
+				dy = sin(angle);
+				for (int r = rMin; r < rMax; r++)
+				{
+					int centerx = x + dx*r;
+					int centery = y + dy*r;
+					int centerx2 = x - dx*r;
+					int centery2 = y - dy*r;
+					if (centerx > 0 && centerx < width &&centery>0&&centery<height)
+					{
+						ellipseParametersSpace[centerx][centery][r-rMin]
+							.push_back(Point(x, y));
+					}
+					if (centerx2 > 0 && centerx2 < width && centery2>0 && centery2<height)
+					{
+						ellipseParametersSpace[centerx2][centery2][r-rMin]
+							.push_back(Point(x, y));
+					}
+				}
+			}
+		}
+	}
+	vector<vector<Point>> result;
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			for (int r = rMin; r < rMax; r++)
+			{
+				if (ellipseParametersSpace[x][y][r-rMin].size()>10)
+				{
+					result.push_back(ellipseParametersSpace[x][y][r-rMin]);
+				}
+			}
+		}
+	}
+	return result;
+}
+
+
+
 vector<vector<Point>> HoughFeatureExtractor::FindEllipses(const Matrix2D & edges, const Matrix2D & magnitude, const Matrix2D & directions)
 {
 	int width = magnitude.Width();
@@ -59,17 +119,17 @@ vector<vector<Point>> HoughFeatureExtractor::FindEllipses(const Matrix2D & edges
 	int roMax = hypot(width,height);
 	int maxAngle = 180;
 	int angleStep = 1;
-	int rMax = 300;
+	int rMax = 200;
 	double epsilon = 0.01;
 	vector<vector<Point>> result;
 	//fi,ro
-	boost::multi_array<vector<Point>, 5> ellipseParametersSpace(boost::extents[maxAngle][width+2*rMax][height*2*rMax][rMax][rMax]);
+	boost::multi_array<vector<Point>, 5> ellipseParametersSpace(boost::extents[maxAngle][width][height][rMax][rMax]);
 	for (int slope = 0;slope < 180;slope++)
 	{
 		double slopeRad = slope / 180. * M_PI;
-		for (int x0 = -rMax; x0 < width+rMax; x0++)
+		for (int x0 = 0; x0 < width; x0++)
 		{
-			for (int y0 = -rMax; y0 < height + rMax; y0++)
+			for (int y0 = 0; y0 < height; y0++)
 			{
 				for (int a = 0; a < rMax; a++)
 				{
@@ -85,7 +145,7 @@ vector<vector<Point>> HoughFeatureExtractor::FindEllipses(const Matrix2D & edges
 										Sqr((x - x0)*cos(slopeRad) + (y - y0) * sin(slopeRad)) / Sqr(a) +
 										Sqr((x - x0)*sin(slope) - (y - y0)*cos(slope)) / Sqr(b) - 1) < epsilon)
 									{
-										ellipseParametersSpace[slope][x0 + rMax][y0 + rMax][a][b].push_back(Point(x,y));
+										ellipseParametersSpace[slope][x0][y0][a][b].push_back(Point(x,y));
 									}
 								}
 							}
@@ -99,15 +159,15 @@ vector<vector<Point>> HoughFeatureExtractor::FindEllipses(const Matrix2D & edges
 	for (int slope = 0;slope < 180;slope++)
 	{
 		double slopeRad = slope / 180. * M_PI;
-		for (int x0 = -rMax; x0 < width + rMax; x0++)
+		for (int x0 = 0; x0 < width; x0++)
 		{
-			for (int y0 = -rMax; y0 < height + rMax; y0++)
+			for (int y0 = 0; y0 < height; y0++)
 			{
 				for (int a = 0; a < rMax; a++)
 				{
 					for (int b = 0; b < a; b++)
 					{
-						auto& points = ellipseParametersSpace[slope][x0 + rMax][y0 + rMax][a][b];
+						auto& points = ellipseParametersSpace[slope][x0][y0][a][b];
 						if (points.size() > 5)
 						{							
 							result.push_back(points);

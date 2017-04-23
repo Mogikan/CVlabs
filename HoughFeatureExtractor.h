@@ -12,6 +12,12 @@ public:
 		const Matrix2D & edges, 
 		const Matrix2D & magnitude, 
 		const Matrix2D & directions);
+	static vector<vector<Point>> FindCircles(
+		const Matrix2D & edges,
+		const Matrix2D & magnitude,
+		const Matrix2D & directions,
+		int rMin = 1,
+		int rMax= 300);
 	static vector<vector<Point>> FindEllipses(
 		const Matrix2D & edges,
 		const Matrix2D & magnitude,
