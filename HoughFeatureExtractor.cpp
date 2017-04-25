@@ -11,13 +11,12 @@ HoughFeatureExtractor::~HoughFeatureExtractor()
 {
 }
 
-vector<vector<Point>> HoughFeatureExtractor::FindLines(const Matrix2D & edges, const Matrix2D & magnitude, const Matrix2D & directions)
+vector<vector<Point>> HoughFeatureExtractor::FindLines(const Matrix2D & edges, const Matrix2D & magnitude, const Matrix2D & directions,int roStep,int angleStep)
 {
 	int roMax = hypot(magnitude.Width(), magnitude.Height());
 	int maxAngle = 360;
-	int angleStep = 1;
 	//fi,ro
-	boost::multi_array<vector<Point>, 2> lineParametersSpace(boost::extents[roMax*2][maxAngle/angleStep]);
+	boost::multi_array<vector<Point>, 2> lineParametersSpace(boost::extents[roMax/roStep*2+1][maxAngle/angleStep+1]);
 
 	
 	for (int y = 0; y < edges.Height(); y++)
@@ -28,21 +27,21 @@ vector<vector<Point>> HoughFeatureExtractor::FindLines(const Matrix2D & edges, c
 			{
 				double angleRadians = directions.At(x, y);
 				double angleRadNormalized = fmod(angleRadians+2 * M_PI,2 * M_PI);
-				int fi = int(angleRadNormalized/M_PI*180);
+				int fi = int(angleRadNormalized/M_PI*180)/angleStep;
 				int height = edges.Height();
 				int width = edges.Width();
-				int ro = ((x-width/2.)*cos(angleRadians)+(y-height/2.)*sin(angleRadians))+roMax/2;
+				int ro = (((x-width/2.)*cos(angleRadians)+(y-height/2.)*sin(angleRadians))+roMax/2)/roStep;
 				lineParametersSpace[ro][int(fi)].push_back(Point(x, y));
 			}
 		}
 	}
 	vector<vector<Point>> result;
-	for (int ro = 0; ro < roMax*2; ro++)
+	for (int ro = 0; ro < roMax*2/roStep; ro++)
 	{
-		for (int fi = 0; fi < maxAngle; fi++)
+		for (int fi = 0; fi < maxAngle/angleStep; fi++)
 		{
 			auto accumulatedLines = lineParametersSpace[ro][fi];
-			if (accumulatedLines.size() > 5
+			if (accumulatedLines.size() > 20
 				)
 			{				
 				result.push_back(accumulatedLines);
@@ -52,7 +51,14 @@ vector<vector<Point>> HoughFeatureExtractor::FindLines(const Matrix2D & edges, c
 	return result;
 }
 
-vector<vector<Point>> HoughFeatureExtractor::FindCircles(const Matrix2D & edges, const Matrix2D & magnitude, const Matrix2D & directions,int rMin, int rMax)
+vector<vector<Point>> HoughFeatureExtractor::FindCircles(
+	const Matrix2D & edges, 
+	const Matrix2D & magnitude, 
+	const Matrix2D & directions,
+	int rMin, 
+	int rMax,
+	int rStep,
+	int centerStep)
 {
 	int width = edges.Width();
 	int height = edges.Height();
@@ -63,7 +69,7 @@ vector<vector<Point>> HoughFeatureExtractor::FindCircles(const Matrix2D & edges,
 	{
 		rMax = width / 2. - 1;
 	}
-	boost::multi_array<vector<Point>, 3> ellipseParametersSpace(boost::extents[width][height][rMax - rMin]);
+	boost::multi_array<vector<Point>, 3> ellipseParametersSpace(boost::extents[width/centerStep+1][height/centerStep+1][(rMax - rMin)/rStep+1]);
 	for (int y = 0; y < height; y++)
 	{
 		for (int x = 0; x < width; x++)
@@ -73,20 +79,21 @@ vector<vector<Point>> HoughFeatureExtractor::FindCircles(const Matrix2D & edges,
 				angle = directions.At(x, y);
 				dx = cos(angle);
 				dy = sin(angle);
-				for (int r = rMin; r < rMax; r++)
+				for (int r = 0; r < (rMax-rMin)/rStep; r++)
 				{
-					int centerx = x + dx*r;
-					int centery = y + dy*r;
-					int centerx2 = x - dx*r;
-					int centery2 = y - dy*r;
+					int shiftedR = r+rMin;
+					int centerx = x + dx*shiftedR;
+					int centery = y + dy*shiftedR;
+					int centerx2 = x - dx*shiftedR;
+					int centery2 = y - dy*shiftedR;
 					if (centerx > 0 && centerx < width &&centery>0&&centery<height)
 					{
-						ellipseParametersSpace[centerx][centery][r-rMin]
+						ellipseParametersSpace[centerx/centerStep][centery/centerStep][r]
 							.push_back(Point(x, y));
 					}
 					if (centerx2 > 0 && centerx2 < width && centery2>0 && centery2<height)
 					{
-						ellipseParametersSpace[centerx2][centery2][r-rMin]
+						ellipseParametersSpace[centerx2/centerStep][centery2/centerStep][r]
 							.push_back(Point(x, y));
 					}
 				}
@@ -94,15 +101,15 @@ vector<vector<Point>> HoughFeatureExtractor::FindCircles(const Matrix2D & edges,
 		}
 	}
 	vector<vector<Point>> result;
-	for (int y = 0; y < height; y++)
+	for (int y = 0; y < height/centerStep; y++)
 	{
-		for (int x = 0; x < width; x++)
+		for (int x = 0; x < width/centerStep; x++)
 		{
-			for (int r = rMin; r < rMax; r++)
+			for (int r = 0; r < (rMax-rMin)/rStep; r++)
 			{
-				if (ellipseParametersSpace[x][y][r-rMin].size()>10)
+				if (ellipseParametersSpace[x][y][r].size()>50)
 				{
-					result.push_back(ellipseParametersSpace[x][y][r-rMin]);
+					result.push_back(ellipseParametersSpace[x][y][r]);
 				}
 			}
 		}
