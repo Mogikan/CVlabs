@@ -233,7 +233,9 @@ void PlatformImageUtils::DrawEllipses(QImage & image, vector<EllipseDescriptor> 
 	{
 		auto& ellipse = ellipses[i];
 		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
-		painter.setPen(color);
+		QPen pen(color);
+		pen.setWidth(3);
+		painter.setPen(pen);		
 		painter.save();
 		painter.translate(ellipse.x, ellipse.y);
 		painter.rotate((ellipse.fi)/M_PI*180);
