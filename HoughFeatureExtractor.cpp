@@ -116,7 +116,7 @@ bool PointBelongsToEllipse(const Point& point,const EllipseDescriptor& ellipse)
 		sqr((point.x - ellipse.x)*cos(ellipse.fi) + (point.y - ellipse.y) * sin(ellipse.fi))
 		/ sqr(ellipse.a) +
 		sqr((point.x - ellipse.x)*sin(ellipse.fi) - (point.y - ellipse.y)*cos(ellipse.fi))
-		/ sqr(ellipse.b) - 1) < 0.5;
+		/ sqr(ellipse.b) - 1) < 2;
 }
 
 vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(const Matrix2D & edges, const Matrix2D & magnitude, const Matrix2D & directions, int rMin, int rMax)
@@ -124,7 +124,7 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(const Matrix2D
 	int height = edges.Height();
 	int width = edges.Width();
 	vector<EllipseDescriptor> result;
-	vector<vector<double>> bAccumulator(rMax);
+	vector<int> bAccumulator(rMax);
 	
 	vector<Point> edgesPoints;
 	for (int y = 0; y < height; y++)
@@ -170,7 +170,7 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(const Matrix2D
 					double b = sqrt(sqr(a)*sqr(d)*(1-sqr(cosTau)) / (sqr(a) - sqr(d)*sqr(cosTau)));
 					if (b<a && b < rMax && b>rMin)
 					{
-						bAccumulator[int(b)].push_back(b);
+						bAccumulator[int(b)]++;
 					}
 				}
 			}
@@ -179,16 +179,16 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(const Matrix2D
 			int maxIndex = -1;
 			for (int i = 0; i < rMax; i++)
 			{
-				if (bAccumulator[i].size() > max)
+				if (bAccumulator[i] > max)
 				{
 					maxIndex = i;
-					max = bAccumulator[i].size();
+					max = bAccumulator[i];
 				}
 			}
-			if (maxIndex>0 && bAccumulator[maxIndex].size() > 80)
+			if (maxIndex>0 && bAccumulator[maxIndex] > 150)
 			{
-				auto bCandidates = bAccumulator[maxIndex];
-				double b = accumulate(bCandidates.begin(), bCandidates.end(), 0.) / bCandidates.size();
+				//auto bCandidates = bAccumulator[maxIndex];
+				double b = maxIndex;//accumulate(bCandidates.begin(), bCandidates.end(), 0.) / bCandidates.size();
 				auto foundEllipse = EllipseDescriptor(x0, y0, a, b, slope);
 				result.push_back(foundEllipse);
 				
@@ -203,7 +203,7 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(const Matrix2D
 			}
 			for(auto& accumulator : bAccumulator)
 			{
-				accumulator.clear();
+				accumulator = 0;
 			}
 		}
 
