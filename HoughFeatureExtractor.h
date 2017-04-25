@@ -3,7 +3,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include "Point.h"
-#include "Ellipse.h"
+#include "EllipseDescriptor.h"
 class HoughFeatureExtractor
 {
 public:
@@ -16,8 +16,16 @@ public:
 		const Matrix2D & edges,
 		const Matrix2D & magnitude,
 		const Matrix2D & directions,
-		int rMin = 1,
+		int rMin = 10,
 		int rMax= 300);
+	static vector<EllipseDescriptor> FindEllipsesFast
+	(
+		const Matrix2D & edges,
+		const Matrix2D & magnitude,
+		const Matrix2D & directions,
+		int rMin = 5,
+		int rMax = 300);
+
 	static vector<vector<Point>> FindEllipses(
 		const Matrix2D & edges,
 		const Matrix2D & magnitude,

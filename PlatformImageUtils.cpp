@@ -226,6 +226,22 @@ void PlatformImageUtils::DrawLines(QImage& image, vector<vector<Point>> points)
 	}
 }
 
+void PlatformImageUtils::DrawEllipses(QImage & image, vector<EllipseDescriptor> ellipses)
+{
+	QPainter painter(&image);
+	for (int i = 0; i < ellipses.size(); i++)
+	{
+		auto& ellipse = ellipses[i];
+		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
+		painter.setPen(color);
+		painter.save();
+		painter.translate(ellipse.x, ellipse.y);
+		painter.rotate((ellipse.fi)/M_PI*180);
+		painter.drawEllipse(QPointF(0,0), ellipse.a, ellipse.b);
+		painter.restore();
+	}
+}
+
 QImage PlatformImageUtils::DrawImage(const Matrix2D & image1, vector<Point> points)
 {
 	auto resultImage = Matrix2D(image1.Width(), image1.Height());

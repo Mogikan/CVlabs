@@ -6,6 +6,7 @@
 #include "Point.h"
 #include "BlobInfo.h"
 #include "Descriptor.h"
+#include "EllipseDescriptor.h"
 using namespace std;
 class PlatformImageUtils
 {
@@ -26,6 +27,8 @@ public:
 	static QImage DrawImage(const Matrix2D& image1, vector<Point> points);
 	static QImage DrawImage(const Matrix2D& image, vector<BlobInfo> blobs);
 	static void DrawLines(QImage& image, vector<vector<Point>> points);
+	static void DrawEllipses(QImage& image, vector<EllipseDescriptor> points);
+
 	static QImage CombineImages(const QImage& image1, const QImage& image2, const Matrix2D& t);
 	static QImage LoadQImageFromFile(QString filePath);
 private:

@@ -1,7 +1,10 @@
 #pragma once
-struct Ellipse
+struct EllipseDescriptor
 {
-	Ellipse(double x, double y, double a, double b, double fi)
+	EllipseDescriptor()
+	{
+	}
+	EllipseDescriptor(double x, double y, double a, double b, double fi)
 	{
 		this->x = x;
 		this->y = y;
@@ -10,10 +13,6 @@ struct Ellipse
 		this->fi = fi;
 	}
 	
-	Ellipse()
-	{			
-	}
-
 	double x;
 	double y;
 	double a;

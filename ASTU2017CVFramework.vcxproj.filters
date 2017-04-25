@@ -181,7 +181,7 @@
     <ClInclude Include="HoughFeatureExtractor.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="Ellipse.h">
+    <ClInclude Include="EllipseDescriptor.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>

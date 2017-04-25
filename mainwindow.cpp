@@ -102,10 +102,10 @@ void MainWindow::on_pushButton_4_clicked()
 	}
 	auto edges = ImageFramework::ApplyCannyOperator(direction, magnitude);
 	//auto& points = HoughFeatureExtractor::FindLines(*edges, magnitude, direction);
-	auto& points = HoughFeatureExtractor::FindCircles(*edges, magnitude, direction);
-
+	//auto& points = HoughFeatureExtractor::FindCircles(*edges, magnitude, direction);
+	auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
 	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
-	PlatformImageUtils::DrawLines(imageWithLines, points);
+	PlatformImageUtils::DrawEllipses(imageWithLines, points);
 	ShowImage(imageWithLines);
 
 	//auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
