@@ -171,6 +171,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BlobInfo.h" />
+    <ClInclude Include="CircleDescriptor.h" />
     <ClInclude Include="EllipseDescriptor.h" />
     <ClInclude Include="DebugHelper.h" />
     <ClInclude Include="Descriptor.h" />

@@ -184,5 +184,8 @@
     <ClInclude Include="EllipseDescriptor.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
+    <ClInclude Include="CircleDescriptor.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

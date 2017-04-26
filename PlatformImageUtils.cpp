@@ -244,6 +244,20 @@ void PlatformImageUtils::DrawEllipses(QImage & image, vector<EllipseDescriptor> 
 	}
 }
 
+void PlatformImageUtils::DrawCircles(QImage & image, vector<CircleDescriptor> circles)
+{
+	QPainter painter(&image);
+	for (int i = 0; i < circles.size(); i++)
+	{
+		auto& circle = circles[i];
+		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
+		QPen pen(color);
+		pen.setWidth(3);
+		painter.setPen(pen);
+		painter.drawEllipse(circle.x-circle.r/2, circle.y-circle.r/2, circle.r, circle.r);		
+	}
+}
+
 QImage PlatformImageUtils::DrawImage(const Matrix2D & image1, vector<Point> points)
 {
 	auto resultImage = Matrix2D(image1.Width(), image1.Height());

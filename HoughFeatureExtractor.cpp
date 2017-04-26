@@ -1,7 +1,7 @@
 #include "HoughFeatureExtractor.h"
 #include "boost/multi_array.hpp"
 #include "MathHelper.h"
-
+#include "DebugHelper.h"
 HoughFeatureExtractor::HoughFeatureExtractor()
 {
 }
@@ -41,7 +41,7 @@ vector<vector<Point>> HoughFeatureExtractor::FindLines(const Matrix2D & edges, c
 		for (int fi = 0; fi < maxAngle/angleStep; fi++)
 		{
 			auto accumulatedLines = lineParametersSpace[ro][fi];
-			if (accumulatedLines.size() > 20
+			if (accumulatedLines.size() > 10
 				)
 			{				
 				result.push_back(accumulatedLines);
@@ -51,7 +51,7 @@ vector<vector<Point>> HoughFeatureExtractor::FindLines(const Matrix2D & edges, c
 	return result;
 }
 
-vector<vector<Point>> HoughFeatureExtractor::FindCircles(
+vector<CircleDescriptor> HoughFeatureExtractor::FindCircles(
 	const Matrix2D & edges, 
 	const Matrix2D & magnitude, 
 	const Matrix2D & directions,
@@ -69,7 +69,7 @@ vector<vector<Point>> HoughFeatureExtractor::FindCircles(
 	{
 		rMax = width / 2. - 1;
 	}
-	boost::multi_array<vector<Point>, 3> ellipseParametersSpace(boost::extents[width/centerStep+1][height/centerStep+1][(rMax - rMin)/rStep+1]);
+	boost::multi_array<int, 3> circleParametersSpace(boost::extents[width/centerStep+1][height/centerStep+1][(rMax - rMin)/rStep+1]);
 	for (int y = 0; y < height; y++)
 	{
 		for (int x = 0; x < width; x++)
@@ -88,28 +88,27 @@ vector<vector<Point>> HoughFeatureExtractor::FindCircles(
 					int centery2 = y - dy*shiftedR;
 					if (centerx > 0 && centerx < width &&centery>0&&centery<height)
 					{
-						ellipseParametersSpace[centerx/centerStep][centery/centerStep][r]
-							.push_back(Point(x, y));
+						circleParametersSpace[centerx / centerStep][centery / centerStep][r]++;
 					}
 					if (centerx2 > 0 && centerx2 < width && centery2>0 && centery2<height)
 					{
-						ellipseParametersSpace[centerx2/centerStep][centery2/centerStep][r]
-							.push_back(Point(x, y));
+						circleParametersSpace[centerx2 / centerStep][centery2 / centerStep][r]++;							
 					}
 				}
 			}
 		}
 	}
-	vector<vector<Point>> result;
+	vector<CircleDescriptor> result;
 	for (int y = 0; y < height/centerStep; y++)
 	{
 		for (int x = 0; x < width/centerStep; x++)
 		{
 			for (int r = 0; r < (rMax-rMin)/rStep; r++)
-			{
-				if (ellipseParametersSpace[x][y][r].size()>50)
+			{				
+				if (circleParametersSpace[x][y][r]>50)
 				{
-					result.push_back(ellipseParametersSpace[x][y][r]);
+					double transformedR = r*rStep + rMin;
+					result.push_back(CircleDescriptor((x+0.5)*centerStep,(y+0.5)*centerStep,transformedR));
 				}
 			}
 		}
@@ -123,27 +122,59 @@ bool PointBelongsToEllipse(const Point& point,const EllipseDescriptor& ellipse)
 		sqr((point.x - ellipse.x)*cos(ellipse.fi) + (point.y - ellipse.y) * sin(ellipse.fi))
 		/ sqr(ellipse.a) +
 		sqr((point.x - ellipse.x)*sin(ellipse.fi) - (point.y - ellipse.y)*cos(ellipse.fi))
-		/ sqr(ellipse.b) - 1) < 2;
+		/ sqr(ellipse.b) - 1) < 0.5;
 }
 
-vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(const Matrix2D & edges, const Matrix2D & magnitude, const Matrix2D & directions, int rMin, int rMax)
+bool HasAnyEdge(const Matrix2D& edges,int x, int y,int edgeStep) 
 {
-	int height = edges.Height();
-	int width = edges.Width();
-	vector<EllipseDescriptor> result;
-	vector<int> bAccumulator(rMax);
-	
-	vector<Point> edgesPoints;
-	for (int y = 0; y < height; y++)
+	for (int dy = 0; dy < edgeStep; dy++)
 	{
-		for (int x = 0; x < width; x++)
+		for (int dx = 0; dx < edgeStep; dx++)
 		{
-			if (edges.At(x, y) > 1- epsilon)
+			if (edges.GetIntensity(x + dx, y + dy,BorderMode::zero) > 1 - epsilon)
 			{
-				edgesPoints.push_back(Point(x, y));
+				return true;
 			}
 		}
 	}
+	return false;
+}
+
+vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(
+	const Matrix2D & edges, 
+	const Matrix2D & magnitude, 
+	const Matrix2D & directions, 
+	int rMin, 
+	int rMax,
+	double rStep,
+	int edgeStep)
+{
+	int height = edges.Height();
+	int width = edges.Width();
+	vector<EllipseDescriptor> result;	
+	vector<Point> edgesPoints;
+	for (int y = 0; y < height; y+=edgeStep)
+	{
+		for (int x = 0; x < width; x+=edgeStep)
+		{
+			if (HasAnyEdge(edges,x,y,edgeStep))
+			{
+				edgesPoints.push_back(Point(x/edgeStep, y/edgeStep));
+			}
+		}
+	}
+	Matrix2D downscaledImage(width / edgeStep, height / edgeStep);
+	//for (int i = 0; i < edgesPoints.size(); i++)
+	//{
+	//	auto point = edgesPoints.at(i);
+	//	downscaledImage.SetElementAt(point.x, point.y, 1);
+	//	PlatformImageUtils::SaveImage(Image(downscaledImage), "C:\\downscaledEllipse.png");
+	//}
+	rMin = rMin / edgeStep;
+	rMax = rMax / edgeStep;
+	boost::multi_array<int, 3> bAccumulator(boost::extents[edgesPoints.size()][edgesPoints.size()][(rMax - rMin) / rStep + 1]);
+	//vector<int> bAccumulator((rMax - rMin) / rStep);
+
 	for (int p1Index = 0; p1Index < edgesPoints.size(); p1Index++)
 	{
 		double x1 = edgesPoints[p1Index].x;
@@ -177,41 +208,42 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(const Matrix2D
 					double b = sqrt(sqr(a)*sqr(d)*(1-sqr(cosTau)) / (sqr(a) - sqr(d)*sqr(cosTau)));
 					if (b<a && b < rMax && b>rMin)
 					{
-						bAccumulator[int(b)]++;
+						bAccumulator[p1Index][p2Index][int((b-rMin)/rStep)]++;
 					}
 				}
 			}
 
 			double max = DBL_MIN;
 			int maxIndex = -1;
-			for (int i = 0; i < rMax; i++)
+			for (int i = 0; i < (rMax-rMin)/rStep; i++)
 			{
-				if (bAccumulator[i] > max)
+				if (bAccumulator[p1Index][p2Index][i] > max)
 				{
 					maxIndex = i;
-					max = bAccumulator[i];
+					max = bAccumulator[p1Index][p2Index][i];
 				}
 			}
-			if (maxIndex>0 && bAccumulator[maxIndex] > 150)
+			//DebugHelper::WriteToDebugOutput(max);
+			if (maxIndex>0 && bAccumulator[p1Index][p2Index][maxIndex] > 2000/a)
 			{
 				//auto bCandidates = bAccumulator[maxIndex];
-				double b = maxIndex;//accumulate(bCandidates.begin(), bCandidates.end(), 0.) / bCandidates.size();
-				auto foundEllipse = EllipseDescriptor(x0, y0, a, b, slope);
+				double b = maxIndex*rStep+rMin+rStep/2.;//accumulate(bCandidates.begin(), bCandidates.end(), 0.) / bCandidates.size();
+				auto foundEllipse = EllipseDescriptor(x0*edgeStep, y0*edgeStep, a*edgeStep, b*edgeStep, slope);
 				result.push_back(foundEllipse);
 				
-				for (int i = 0; i < edgesPoints.size(); i++)
+				/*for (int i = 0; i < edgesPoints.size(); i++)
 				{
-					if (PointBelongsToEllipse(edgesPoints.at(i), foundEllipse)) 
+					if (PointBelongsToEllipse(edgesPoints.at(i), foundEllipse))
 					{
 						edgesPoints.erase(edgesPoints.begin() + i);
 						i--;
 					}
-				}				
+				}*/
 			}
-			for(auto& accumulator : bAccumulator)
-			{
-				accumulator = 0;
-			}
+			//for(auto& accumulator : bAccumulator)
+			//{
+			//	accumulator = 0;
+			//}
 		}
 
 

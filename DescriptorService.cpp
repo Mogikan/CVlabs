@@ -65,7 +65,7 @@ vector<Descriptor> DescriptorService::BuildGradientDirectionDescriptors(
 			gridSize, 
 			buckets, 
 			mainDirectionBuckets);
-	}
+	}	
 	return descriptors;
 }
 
