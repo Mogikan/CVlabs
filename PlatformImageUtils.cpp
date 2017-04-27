@@ -208,6 +208,18 @@ QImage PlatformImageUtils::DrawImage(const Matrix2D & image1, vector<BlobInfo> b
 	return qImage;
 }
 
+void PlatformImageUtils::DrawObjectBounds(QImage & image, Size objectSize, TransformationMetaInfo metaInfo)
+{
+	QPainter painter(&image);
+	painter.save();
+	painter.translate(metaInfo.x,metaInfo.y);
+	painter.scale(metaInfo.scale,metaInfo.scale);
+	double rotation = metaInfo.rotation / M_PI * 180;
+	painter.rotate(rotation);
+	painter.drawRect(-objectSize.w / 2, -objectSize.h / 2, objectSize.w, objectSize.h);
+	painter.restore();
+}
+
 void PlatformImageUtils::DrawLines(QImage& image, vector<vector<Point>> points)
 {
 	QPainter painter(&image);

@@ -29,5 +29,7 @@ private:
 	QImage qImage;	
     QImage qImage2;
 	void ShowImage(QImage image);
+	void FindEllipses();
+	void FindCircles();
 };
 

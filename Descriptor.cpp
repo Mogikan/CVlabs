@@ -1,7 +1,8 @@
 #include "Descriptor.h"
 
 
-Descriptor::Descriptor(vector<double> values, Point location,double angle,double sigma):location(location),angle(angle),sigma(sigma)
+Descriptor::Descriptor(vector<double> values, Point location, double angle, double sigma) 
+	:metaInfo(location.x, location.y, sigma,angle)
 {	
 	this->resize(values.size());
 	copy(values.begin(), values.end(), this->begin());
@@ -24,17 +25,22 @@ void Descriptor::Normalize()
 
 Point Descriptor::GetPoint() const
 {
-	return location;
+	return Point(metaInfo.x,metaInfo.y);
 }
 
 double Descriptor::Sigma() const
 {
-	return sigma;
+	return metaInfo.scale;
+}
+
+TransformationMetaInfo Descriptor::MetaInfo() const
+{
+	return metaInfo;
 }
 
 double Descriptor::Angle() const
 {
-	return angle;
+	return metaInfo.rotation;
 }
 
 void Descriptor::RemoveNoise()

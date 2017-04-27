@@ -3,6 +3,8 @@
 #include "Matrix2D.h"
 #include "Point.h"
 #include <algorithm>
+#include "TransformationMetaInfo.h"
+
 using namespace std;
 class Descriptor:public vector<double>
 {
@@ -11,11 +13,10 @@ public:
 	Point GetPoint() const;
 	double Angle() const;
 	double Sigma() const;
+	TransformationMetaInfo MetaInfo() const;
 private:
 	const double Threshold = 0.2;
-	Point location;	
-	double angle;
-	double sigma;
+	TransformationMetaInfo metaInfo;
 	void Normalize();
 	void RemoveNoise();
 

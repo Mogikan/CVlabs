@@ -7,7 +7,7 @@
 #include "Image.h"
 #include "POIDetector.h"
 #include "DescriptorService.h"
-#include "HomographyHelper.h"
+#include "TransformationHelper.h"
 #include <memory>
 #include "HoughFeatureExtractor.h"
 using namespace std;
@@ -50,8 +50,7 @@ void MainWindow::on_pushButton_clicked()
     }
 }
 
-
-void MainWindow::on_pushButton_3_clicked()
+void MainWindow::FindCircles() 
 {
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
 	//int octaveCount = log2(min(image->Height(), image->Width()));
@@ -82,16 +81,20 @@ void MainWindow::on_pushButton_3_clicked()
 	//PlatformImageUtils::DrawEllipses(imageWithLines, points);
 	PlatformImageUtils::DrawCircles(imageWithLines, circles);
 	ShowImage(imageWithLines);
+}
 
-  //  QFileDialog imagePicker(this);
-  //  imagePicker.setFileMode(QFileDialog::ExistingFile);
-  //  imagePicker.setNameFilter(tr("Images (*.png *.jpg)"));
-  //  if (imagePicker.exec())
-  //  {
-  //      auto fileName = imagePicker.selectedFiles()[0];
-  //      qImage2 = PlatformImageUtils::LoadQImageFromFile(fileName);
-		//ShowImage(qImage2);
-  //  }
+void MainWindow::on_pushButton_3_clicked()
+{
+	//FindCircles();
+    QFileDialog imagePicker(this);
+    imagePicker.setFileMode(QFileDialog::ExistingFile);
+    imagePicker.setNameFilter(tr("Images (*.png *.jpg)"));
+    if (imagePicker.exec())
+    {
+        auto fileName = imagePicker.selectedFiles()[0];
+        qImage2 = PlatformImageUtils::LoadQImageFromFile(fileName);
+		ShowImage(qImage2);
+    }
 }
 
 void MainWindow::ShowImage(QImage image)
@@ -107,8 +110,8 @@ void MainWindow::ShowImage(QImage image)
 	ui->graphicsView->show();
 }
 
-void MainWindow::on_pushButton_4_clicked()
-{//value match
+void MainWindow::FindEllipses() 
+{
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
 	//int octaveCount = log2(min(image->Height(), image->Width()));
 	//
@@ -132,12 +135,53 @@ void MainWindow::on_pushButton_4_clicked()
 	}
 	auto edges = ImageFramework::ApplyCannyOperator(direction, magnitude);
 	//auto& points = HoughFeatureExtractor::FindLines(*edges, magnitude, direction);
-	auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction,2,150,1,8);
+	auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction, 2, 150, 1, 8);
 	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
 	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
 	//PlatformImageUtils::DrawEllipses(imageWithLines, points);
 	PlatformImageUtils::DrawEllipses(imageWithLines, points);
 	ShowImage(imageWithLines);
+}
+
+void MainWindow::on_pushButton_4_clicked()
+{//value match
+	//FindEllipses();
+	auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
+	auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
+	DescriptorService service;
+	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
+	
+	int octaveCount1 = log2(min(image1->Height(), image1->Width())) - 1;
+	GaussPyramid pyramid1(*image1, octaveCount1);
+	auto& blobs1 = pyramid1.FindBlobs();	
+	auto& descriptors1 = service.BuildGradientDirectionDescriptors(*image1, pyramid1,blobs1);
+	
+	int octaveCount2 = log2(min(image2->Height(), image2->Width())) - 1;
+	GaussPyramid pyramid2(*image2, octaveCount2);
+	auto& blobs2 = pyramid2.FindBlobs();
+	auto& descriptors2 = service.BuildGradientDirectionDescriptors(*image2, pyramid2,blobs2);
+	const vector<pair<Descriptor, Descriptor>>& matches = service.FindMatches(descriptors1, descriptors2);
+	Size image1Size(image1->Width(), image1->Height());
+	Size image2Size(image2->Width(), image2->Height());
+	DescriptorDimentionSettings houghDimensionSettings(
+		image2->Width(), 
+		-image2->Width(), 
+		20, 
+		image2->Height(), 
+		-image2->Height(), 
+		20, 
+		1 / 8.,
+		octaveCount2*2);
+
+	TransformationMetaInfo metaInfo;
+	vector<int> inliers;
+	tie(metaInfo,inliers)=HoughFeatureExtractor::FindObjectPose(image1Size, matches, houghDimensionSettings);
+	
+	auto& objectPicture = qImage2.copy();
+	PlatformImageUtils::DrawObjectBounds(objectPicture,image1Size, metaInfo);
+	ShowImage(objectPicture);
+	//auto& homography = HomographyHelper::FindBestHomography();
+//	ShowImage(PlatformImageUtils::CombineImages(qImage,qImage2,homography));
 
 	//auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
 	//auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();

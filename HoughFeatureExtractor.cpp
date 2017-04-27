@@ -321,3 +321,118 @@ vector<vector<Point>> HoughFeatureExtractor::FindEllipses(const Matrix2D & edges
 	}
 	return result;
 }
+
+TransformationMetaInfo RecalcuteRelativeCoordinates(TransformationMetaInfo& metaInfo,Size objectSize) 
+{
+	double dx = (objectSize.Center().x - metaInfo.x);
+	double dy = (objectSize.Center().y - metaInfo.y);
+	double alpha = atan2(dy, dx);
+	double rotation = -alpha + metaInfo.rotation;
+	double scale = metaInfo.scale;
+	return TransformationMetaInfo(dx,dy,scale,rotation);
+}
+
+TransformationMetaInfo TransformSpaceBack(int x, int y, double r, double s, const DescriptorDimentionSettings& cfg )
+{
+	return TransformationMetaInfo(
+		((x) * cfg.stepX) + cfg.minX,
+		((y)* cfg.stepY) + cfg.minY,		
+		pow(2, s+0.5) * cfg.scaleMin,
+		(r) * cfg.rotationStep
+	);
+}
+
+pair<TransformationMetaInfo,vector<int>> HoughFeatureExtractor::FindObjectPose(
+	Size objectSize,
+	const vector<pair<Descriptor, Descriptor>>& matches,
+	const DescriptorDimentionSettings& settings
+)
+{
+	int sCells = log2(settings.scaleMax) + log2(1/settings.scaleMin) + 1;
+	int xCells = (settings.maxX - settings.minX) / settings.stepX + 1;
+	int yCells = (settings.maxY - settings.minY) / settings.stepY + 1;
+	int rCells = 2 * M_PI / settings.rotationStep;
+	boost::multi_array<pair<double, vector<int>>, 4> transformSpace(boost::extents
+		[xCells][yCells][rCells]	[sCells]);
+
+	for (int i = 0; i < matches.size();i++)
+	{
+		auto& match = matches[i];
+		auto& objectDescriptor = match.first;
+
+		auto& objectMetaInfo = objectDescriptor.MetaInfo();
+		auto objectDescriptorInfo = RecalcuteRelativeCoordinates(objectMetaInfo, objectSize);
+		auto& sceneDescriptorMeta = match.second.MetaInfo();
+		double sceneObjectScale = sceneDescriptorMeta.scale / objectDescriptorInfo.scale;
+		double sceneObjectCenterAngle = sceneDescriptorMeta.rotation-objectDescriptorInfo.rotation;
+		auto vectorToCenterLenght =
+			sceneDescriptorMeta.scale / objectDescriptorInfo.scale
+			*
+			hypot(objectDescriptorInfo.x, objectDescriptorInfo.y);
+		auto dx = vectorToCenterLenght*cos(sceneObjectCenterAngle);
+		auto dy = vectorToCenterLenght*sin(sceneObjectCenterAngle);
+		double sceneObjectCenterX = sceneDescriptorMeta.x + dx;
+		double sceneObjectCenterY = sceneDescriptorMeta.y + dy;
+
+		DebugHelper::WriteToDebugOutput(sceneObjectCenterY);
+		double normalizedScale = log2(sceneObjectScale/settings.scaleMin);
+		double normalizedX = (sceneObjectCenterX - settings.minX) / settings.stepX;
+		double normalizedY = (sceneObjectCenterY - settings.minY) / settings.stepY;
+		double normalizedRotation = (sceneDescriptorMeta.rotation - objectMetaInfo.rotation) / settings.rotationStep;
+
+		int scaleBucket = int(normalizedScale + 0.5) - 1;
+		int xBucket = int(normalizedX+0.5) - 1;
+		int yBucket = int(normalizedY+0.5) - 1;
+		int rotationBucket = int(normalizedRotation+0.5) - 1;
+		for (int dx = 0; dx < 2; dx++)
+		{
+			int currentX = xBucket + dx;
+			double xCenter = currentX + 0.5;
+			double wx = abs(normalizedX - xCenter);
+			for (int dy = 0; dy < 2; dy++)
+			{
+				int currentY = yBucket + dy;
+				double yCenter = currentY + 0.5;
+				double wy = abs(normalizedY - yCenter);
+				for (int dr = 0; dr < 2; dr++)
+				{
+					int currentR = rotationBucket + dr;
+					double rCenter = currentR + 0.5;
+					double wr = abs(normalizedRotation - rCenter);
+					currentR = (currentR + rCells) % rCells;
+					for (int ds = 0; ds < 2; ds++)
+					{
+						int currentS = scaleBucket + ds;
+						double sCenter = currentS + 0.5;
+						double ws = abs(normalizedScale - sCenter);
+						transformSpace[currentX][currentY][currentR][currentS].first += wx*wy*wr*ws;
+						transformSpace[currentX][currentY][currentR][currentS].second.push_back(i);
+					}
+				}
+			}
+		}
+	}
+
+	double threshold = 4;
+	vector<int> maxInliers;
+	double maxWeight = 0;
+	TransformationMetaInfo bestParameters;
+	for (int x = 0;x<xCells; x++)
+		for (int y = 0; y < yCells; y++)
+			for (int r = 0; r < rCells; r++)
+				for (int s = 0; s < sCells; s++)
+				{
+					if (transformSpace[x][y][r][s].first < threshold
+						&& transformSpace[x][y][r][s].second.size() < 3)
+					{
+						continue;
+					}
+					if (maxWeight < transformSpace[x][y][r][s].first) 
+					{
+						bestParameters = TransformSpaceBack(x,y,r,s, settings);
+						maxWeight = transformSpace[x][y][r][s].first;
+						maxInliers = transformSpace[x][y][r][s].second;
+					}
+				}
+	return { bestParameters, maxInliers };
+}

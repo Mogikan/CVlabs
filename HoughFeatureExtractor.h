@@ -5,6 +5,8 @@
 #include "Point.h"
 #include "EllipseDescriptor.h"
 #include "PlatformImageUtils.h"
+#include "Size.h"
+#include "DescriptorDimentionSettings.h"
 class HoughFeatureExtractor
 {
 public:
@@ -39,10 +41,11 @@ public:
 		const Matrix2D & magnitude,
 		const Matrix2D & directions);
 
-	static void FindPose() 
-	{
-
-	}
+	static pair<TransformationMetaInfo,vector<int>> FindObjectPose(
+		Size objectSize,
+		const vector<pair<Descriptor,Descriptor>>& matches,
+		const DescriptorDimentionSettings& settings
+	);
 
 	~HoughFeatureExtractor();
 };

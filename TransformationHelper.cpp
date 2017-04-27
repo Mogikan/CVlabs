@@ -1,11 +1,11 @@
-#include "HomographyHelper.h"
+#include "TransformationHelper.h"
 #include "DebugHelper.h"
 #include <gsl\gsl_linalg.h>
 #include <gsl\gsl_blas.h>
 #include "MathHelper.h"
 #include <random>
 using namespace std;
-HomographyHelper::HomographyHelper()
+TransformationHelper::TransformationHelper()
 {
 }
 
@@ -133,7 +133,7 @@ void CalculateHomograhy(
 	}
 }
 
-Matrix2D HomographyHelper::FindBestHomography(
+Matrix2D TransformationHelper::FindBestHomography(
 	const vector<pair<Descriptor, Descriptor>>& matches,
 	int N,
 	double threshold

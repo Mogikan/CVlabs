@@ -98,10 +98,10 @@
     <ClCompile Include="DescriptorService.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="HomographyHelper.cpp">
+    <ClCompile Include="HoughFeatureExtractor.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
-    <ClCompile Include="HoughFeatureExtractor.cpp">
+    <ClCompile Include="TransformationHelper.cpp">
       <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -172,9 +172,6 @@
     <ClInclude Include="BlobInfo.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
-    <ClInclude Include="HomographyHelper.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="PointD.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
@@ -185,6 +182,18 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="CircleDescriptor.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Size.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DescriptorDimentionSettings.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformationMetaInfo.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
+    <ClInclude Include="TransformationHelper.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>
