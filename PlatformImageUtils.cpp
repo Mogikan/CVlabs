@@ -220,6 +220,18 @@ void PlatformImageUtils::DrawObjectBounds(QImage & image, Size objectSize, Trans
 	painter.restore();
 }
 
+void PlatformImageUtils::DrawObjectBounds(QImage & image, Size objectSize, const Matrix2D& t)
+{
+	QPainter painter(&image);
+	painter.save();
+	painter.setRenderHint(QPainter::Antialiasing);
+	painter.setRenderHint(QPainter::SmoothPixmapTransform);
+	QTransform htransform(t.At(0), t.At(1), t.At(2), t.At(3), t.At(4), t.At(5), t.At(6), t.At(7), t.At(8));
+	painter.setTransform(htransform.transposed());
+	painter.drawRect(0, 0, objectSize.w, objectSize.h);
+	painter.restore();
+}
+
 void PlatformImageUtils::DrawLines(QImage& image, vector<vector<Point>> points)
 {
 	QPainter painter(&image);

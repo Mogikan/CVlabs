@@ -28,6 +28,7 @@ public:
 		vector<pair<Descriptor, Descriptor>> matches);
 	static QImage DrawImage(const Matrix2D& image1, vector<Point> points);
 	static QImage DrawImage(const Matrix2D& image, vector<BlobInfo> blobs);
+	static void DrawObjectBounds(QImage & image, Size objectSize, const Matrix2D& t);
 	static void DrawObjectBounds(QImage& image, Size objectSize, TransformationMetaInfo metaInfo);
 	static void DrawLines(QImage& image, vector<vector<Point>> points);
 	static void DrawEllipses(QImage& image, vector<EllipseDescriptor> ellipses);

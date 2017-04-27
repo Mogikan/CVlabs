@@ -9,6 +9,73 @@ TransformationHelper::TransformationHelper()
 {
 }
 
+void InitAffineSystem(
+	const vector<pair<Descriptor, Descriptor>>& matches,
+	const vector<int>& indexes,
+	gsl_matrix& A,
+	gsl_vector& b	
+)
+{
+	for (int i = 0; i < indexes.size(); i++)
+	{
+		double x1 = matches[indexes[i]].first.GetPoint().x;
+		double y1 = matches[indexes[i]].first.GetPoint().y;
+		double x2 = matches[indexes[i]].second.GetPoint().x;
+		double y2 = matches[indexes[i]].second.GetPoint().y;
+		gsl_matrix_set(&A, i * 2, 0, x1);
+		gsl_matrix_set(&A, i * 2, 1, y1);
+		gsl_matrix_set(&A, i * 2, 2, 1.0);
+		gsl_matrix_set(&A, i * 2, 3, 0.0);
+		gsl_matrix_set(&A, i * 2, 4, 0.0);
+		gsl_matrix_set(&A, i * 2, 5, 0.0);
+
+		gsl_matrix_set(&A, i * 2 + 1, 0, 0.0);
+		gsl_matrix_set(&A, i * 2 + 1, 1, 0.0);
+		gsl_matrix_set(&A, i * 2 + 1, 2, 0.0);
+		gsl_matrix_set(&A, i * 2 + 1, 3, x1);
+		gsl_matrix_set(&A, i * 2 + 1, 4, y1);
+		gsl_matrix_set(&A, i * 2 + 1, 5, 1.0);
+
+		gsl_vector_set(&b, i * 2, x2);
+		gsl_vector_set(&b, i * 2 + 1, y2);
+	}
+}
+
+Matrix2D TransformationHelper::CalculateAffineTransform(const vector<pair<Descriptor, Descriptor>>& matches, const vector<int> inliers)
+{//Ax=b
+	gsl_matrix* A = gsl_matrix_alloc(inliers.size() * 2, 6);;
+	gsl_matrix* ATA = gsl_matrix_alloc(6, 6);
+	gsl_matrix* ATAinv = gsl_matrix_alloc(6, 6);
+	gsl_vector* b = gsl_vector_alloc(2 * inliers.size());
+	InitAffineSystem(matches, inliers, *A, *b);
+
+	gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1., A, A, 0., ATA);
+	int s;
+	gsl_permutation * p = gsl_permutation_alloc(6);
+	gsl_linalg_LU_decomp(ATA, p, &s);
+	gsl_linalg_LU_invert(ATA, p, ATAinv);
+	//ATb
+	
+	gsl_vector* ATb = gsl_vector_alloc(6);
+	gsl_vector* AffineVector = gsl_vector_alloc(6);
+
+	gsl_blas_dgemv(CblasTrans, 1.0, A, b, 0.0, ATb);
+	gsl_blas_dgemv(CblasNoTrans, 1, ATAinv, ATb, 0, AffineVector);
+
+	double transformData[9];
+	std::fill(transformData, transformData +9, 0);
+	for (int i = 0; i < AffineVector->size; i++)
+	{
+		transformData[i] = gsl_vector_get(AffineVector,i);
+	}
+	transformData[8] = 1;
+	gsl_matrix_free(A);
+	gsl_matrix_free(ATA);
+	gsl_matrix_free(ATAinv);
+	gsl_vector_free(b);
+	return Matrix2D(transformData,3,3);
+}
+
 
 bool Contains(unordered_set<int> values, int index)
 {
@@ -20,7 +87,9 @@ bool Contains(unordered_set<int> values, int index)
 	return true;
 }
 
-void InitMatrixA(
+
+
+void InitHomographyMatrix(
 	const vector<pair<Descriptor, Descriptor>>& matches,
 	gsl_matrix& A,
 	const vector<int>& indexes
@@ -123,7 +192,7 @@ void CalculateHomograhy(
 	gsl_vector& work
 ) 
 {
-	InitMatrixA(matches, A, indexes);
+	InitHomographyMatrix(matches, A, indexes);
 	gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1., &A, &A, 0., &ATA);
 	gsl_linalg_SV_decomp(&ATA, &V, &S, &work);
 	for (int i = 0; i < 9; i++)

@@ -176,9 +176,10 @@ void MainWindow::on_pushButton_4_clicked()
 	TransformationMetaInfo metaInfo;
 	vector<int> inliers;
 	tie(metaInfo,inliers)=HoughFeatureExtractor::FindObjectPose(image1Size, matches, houghDimensionSettings);
-	
+	auto affineTransform = TransformationHelper::CalculateAffineTransform(matches, inliers);
 	auto& objectPicture = qImage2.copy();
-	PlatformImageUtils::DrawObjectBounds(objectPicture,image1Size, metaInfo);
+	PlatformImageUtils::DrawObjectBounds(objectPicture, image1Size, affineTransform);	
+	//PlatformImageUtils::DrawObjectBounds(objectPicture,image1Size, metaInfo);
 	ShowImage(objectPicture);
 	//auto& homography = HomographyHelper::FindBestHomography();
 //	ShowImage(PlatformImageUtils::CombineImages(qImage,qImage2,homography));
