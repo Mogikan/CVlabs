@@ -68,6 +68,6 @@ public:
 	static unique_ptr<Matrix2D> ApplyCannyOperator(
 		const Matrix2D& direction,
 		const Matrix2D& magnitude,
-		double lowerThreshold = 0.1,
-		double upperThreshold = 0.3);
+		double lowerThreshold = 0.07,
+		double upperThreshold = 0.25);
 };

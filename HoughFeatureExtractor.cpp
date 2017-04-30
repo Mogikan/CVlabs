@@ -11,42 +11,123 @@ HoughFeatureExtractor::~HoughFeatureExtractor()
 {
 }
 
-vector<vector<Point>> HoughFeatureExtractor::FindLines(const Matrix2D & edges, const Matrix2D & magnitude, const Matrix2D & directions,int roStep,int angleStep)
+bool IsLocalMaximum(
+	const boost::multi_array<pair<double, vector<Point>>, 2>& lineParametersSpace,
+	int ro,
+	int fi,
+	int roBuckets,
+	int fiBuckets,
+	int windowHalfSize = 2
+)
 {
-	int roMax = hypot(magnitude.Width(), magnitude.Height());
-	int maxAngle = 360;
-	//fi,ro
-	boost::multi_array<vector<Point>, 2> lineParametersSpace(boost::extents[roMax/roStep*2+1][maxAngle/angleStep+1]);
+	auto accumulatedLines = lineParametersSpace[ro][fi];
 
-	
+	for (int dRo = -windowHalfSize; dRo <= windowHalfSize; dRo++)
+	{
+		for (int dFi = -windowHalfSize; dFi <= windowHalfSize; dFi++)
+		{
+			if (dFi == 0 && dRo == 0
+				|| dRo + ro<0
+				|| dRo + ro>roBuckets-1
+				|| dFi + fi<0
+				|| dFi + fi>fiBuckets-1)
+			{
+				continue;
+			}
+			if (accumulatedLines.first < lineParametersSpace[ro + dRo][fi + dFi].first)
+			{
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+double TransformCoordinates(double x, double max, double min, double totalBuckets)
+{
+	double step = (max - min)/totalBuckets;
+	return (x - min) / step;
+}
+
+double epsilon = 0.01;
+vector<vector<Point>> HoughFeatureExtractor::FindLines(
+	const Matrix2D & edges,
+	const Matrix2D & magnitude,
+	const Matrix2D & directions,
+	const LineSpaceSettings& settings
+)
+{
+	double maxAngle = 2*M_PI;
+	double minAngle = 0;
+	int roCells = (settings.roMax - settings.roMin) / settings.roStep + 1;
+	int angleCells = (maxAngle - minAngle) / settings.angleStep;
+	//fi,ro
+	boost::multi_array<pair<double, vector<Point>>, 2> lineParametersSpace(
+		boost::extents
+		[roCells]
+	[angleCells]);
+	int height = edges.Height();
+	int width = edges.Width();
 	for (int y = 0; y < edges.Height(); y++)
 	{
 		for (int x = 0; x < edges.Width(); x++)
 		{
-			if (edges.At(x, y) > 0)
+			if (edges.At(x, y) > epsilon)
 			{
-				double angleRadians = directions.At(x, y);
-				double angleRadNormalized = fmod(angleRadians+2 * M_PI,2 * M_PI);
-				int fi = int(angleRadNormalized/M_PI*180)/angleStep;
-				int height = edges.Height();
-				int width = edges.Width();
-				int ro = (((x-width/2.)*cos(angleRadians)+(y-height/2.)*sin(angleRadians))+roMax/2)/roStep;
-				lineParametersSpace[ro][int(fi)].push_back(Point(x, y));
+				int centeredX = -(x - width / 2.);
+				int centeredY = -(y - height / 2.);
+				double angle = directions.At(x, y);
+				
+				double teta = atan2(centeredY, centeredX) - angle;
+				double ro = hypot(centeredX, centeredY)*cos(teta);
+				double dx = cos(angle);
+				double dy = sin(angle);
+				double crossX = (sqr(dx)*centeredX + dy*centeredY*dx) / (sqr(dx)+sqr(dy));
+				double crossY = crossX * dy / dx;
+				double ro2 = hypot(crossX,crossY);
+				angle = atan2(crossY, crossX);
+				double anglePositive = fmod(angle + 2*M_PI, 2*M_PI);
+				double angleNormalized = anglePositive / settings.angleStep;
+				int fiBucket = int(angleNormalized + 0.5) - 1;
+				//assert(abs(ro - ro2) < 0.1);
+				double roNormalized =
+					TransformCoordinates(
+						ro, 						 
+						settings.roMax,
+						settings.roMin,
+						roCells);
+				int roBucket = int(roNormalized + 0.5) - 1;
+				for (int dRo = 0;dRo < 2;dRo++)
+				{
+					int currentRo = roBucket + dRo;
+					double roCenter = currentRo + 0.5;
+					double wRo = abs(roNormalized - roCenter);
+					for (int dFi = 0; dFi < 2; dFi++)
+					{
+						int currentFi = (fiBucket + dFi + angleCells) % angleCells;
+						double fiCenter = fiBucket + dFi + 0.5;
+						double wFi = abs(angleNormalized - fiCenter);
+						assert(wRo < 1.001 && wFi < 1.001);
+						lineParametersSpace[currentRo][currentFi].first += wRo*wFi;
+						lineParametersSpace[currentRo][currentFi].second.push_back(Point(x, y));
+					}
+				}
 			}
 		}
 	}
 	vector<vector<Point>> result;
-	for (int ro = 0; ro < roMax*2/roStep; ro++)
+	for (int ro = 0; ro < roCells; ro++)
 	{
-		for (int fi = 0; fi < maxAngle/angleStep; fi++)
+		for (int fi = 0; fi < angleCells; fi++)
 		{
 			auto accumulatedLines = lineParametersSpace[ro][fi];
-			if (accumulatedLines.size() > 10
-				)
-			{				
-				result.push_back(accumulatedLines);
+			if (accumulatedLines.first > 30 && 
+				IsLocalMaximum(lineParametersSpace,ro,fi,roCells,angleCells))
+			{
+				result.push_back(accumulatedLines.second);
 			}
 		}
+
 	}
 	return result;
 }
@@ -115,7 +196,7 @@ vector<CircleDescriptor> HoughFeatureExtractor::FindCircles(
 	}
 	return result;
 }
-double epsilon = 0.01;
+
 bool PointBelongsToEllipse(const Point& point,const EllipseDescriptor& ellipse) 
 {
 	return abs(

@@ -7,6 +7,7 @@
 #include "PlatformImageUtils.h"
 #include "Size.h"
 #include "DescriptorDimentionSettings.h"
+#include "LineSpaceSettings.h"
 class HoughFeatureExtractor
 {
 public:
@@ -15,8 +16,7 @@ public:
 		const Matrix2D & edges, 
 		const Matrix2D & magnitude, 
 		const Matrix2D & directions,
-		int roStep = 5,
-		int angleStep=4);
+		const LineSpaceSettings& lineSpaceSettings);
 	static vector<CircleDescriptor> FindCircles(
 		const Matrix2D & edges,
 		const Matrix2D & magnitude,

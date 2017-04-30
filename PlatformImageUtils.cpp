@@ -224,6 +224,8 @@ void PlatformImageUtils::DrawObjectBounds(QImage & image, Size objectSize, const
 {
 	QPainter painter(&image);
 	painter.save();
+	auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
+	painter.setPen(color);
 	painter.setRenderHint(QPainter::Antialiasing);
 	painter.setRenderHint(QPainter::SmoothPixmapTransform);
 	QTransform htransform(t.At(0), t.At(1), t.At(2), t.At(3), t.At(4), t.At(5), t.At(6), t.At(7), t.At(8));

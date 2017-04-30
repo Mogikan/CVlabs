@@ -10,7 +10,7 @@ struct DescriptorDimentionSettings
 		int maxX, int minX, int stepX,
 		int maxY, int minY, int stepY,
 		double scaleMin, double scaleMax,
-		double rotationStep = M_PI / 6.
+		double rotationStep = M_PI / 12.
 	)
 	{
 		this->maxX = maxX;

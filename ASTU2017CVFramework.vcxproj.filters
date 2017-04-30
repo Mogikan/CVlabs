@@ -196,5 +196,8 @@
     <ClInclude Include="TransformationHelper.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
+    <ClInclude Include="LineSpaceSettings.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

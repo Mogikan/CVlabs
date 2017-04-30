@@ -164,11 +164,11 @@ void MainWindow::on_pushButton_4_clicked()
 	Size image1Size(image1->Width(), image1->Height());
 	Size image2Size(image2->Width(), image2->Height());
 	DescriptorDimentionSettings houghDimensionSettings(
-		image2->Width(), 
-		-image2->Width(), 
+		image2->Width()*2, 
+		-image2->Width()*2, 
 		20, 
-		image2->Height(), 
-		-image2->Height(), 
+		image2->Height()*2, 
+		-image2->Height()*2, 
 		20, 
 		1 / 8.,
 		octaveCount2*2);
@@ -179,7 +179,7 @@ void MainWindow::on_pushButton_4_clicked()
 	auto affineTransform = TransformationHelper::CalculateAffineTransform(matches, inliers);
 	auto& objectPicture = qImage2.copy();
 	PlatformImageUtils::DrawObjectBounds(objectPicture, image1Size, affineTransform);	
-	//PlatformImageUtils::DrawObjectBounds(objectPicture,image1Size, metaInfo);
+	PlatformImageUtils::DrawObjectBounds(objectPicture,image1Size, metaInfo);
 	ShowImage(objectPicture);
 	//auto& homography = HomographyHelper::FindBestHomography();
 //	ShowImage(PlatformImageUtils::CombineImages(qImage,qImage2,homography));
@@ -228,7 +228,10 @@ void MainWindow::on_pushButton_5_clicked()
 		}
 	}
 	auto edges = ImageFramework::ApplyCannyOperator(direction, magnitude);
-	auto& points = HoughFeatureExtractor::FindLines(*edges, magnitude, direction,2,2);
+	int roMax = hypot(magnitude.Width(), magnitude.Height());
+	int roMin = -roMax;
+	LineSpaceSettings settings(roMax, roMin,5,2*M_PI/60);
+	auto& points = HoughFeatureExtractor::FindLines(*edges, magnitude, direction,settings);
 	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
 	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
 	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
