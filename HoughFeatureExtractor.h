@@ -24,18 +24,13 @@ public:
 		const Matrix2D & magnitude,
 		const Matrix2D & directions,
 		const CircleSpaceSettings & settings);
-	static vector<EllipseDescriptor> FindEllipsesFast
+	static vector<EllipseDescriptor> FindEllipses
 	(
 		const Matrix2D & edges,
 		const Matrix2D & magnitude,
 		const Matrix2D & directions,
 		const EllipseSpaceSettings& settings
 		);
-
-	static vector<vector<Point>> FindEllipses(
-		const Matrix2D & edges,
-		const Matrix2D & magnitude,
-		const Matrix2D & directions);
 
 	static pair<TransformationMetaInfo,vector<int>> FindObjectPose(
 		Size objectSize,

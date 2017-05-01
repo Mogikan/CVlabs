@@ -50,9 +50,14 @@ double TransformCoordinates(double x, double max, double min, double totalBucket
 	return (x - min) / step;
 }
 
+double TransformCoordinates(double x, double min, double step)
+{
+	return (x - min) / step;	
+}
+
 double TransformCoordinatesBack(double x,double min, double step)
 {
-	return x * step + min;
+	return (x+0.5) * step + min;
 }
 
 double epsilon = 0.01;
@@ -205,13 +210,32 @@ vector<CircleDescriptor> HoughFeatureExtractor::FindCircles(
 				directionY = sin(angle);
 				for (int r = settings.rMin; r < settings.rMax; r++)
 				{
-					double normalizedR = TransformCoordinates(r, settings.rMax, settings.rMin, rCells);
-					double normalizedX1 = TransformCoordinates(x + directionX*r, settings.xMax, settings.xMin, centerXCells);
-					double normalizedY1 = TransformCoordinates(y + directionY*r, settings.yMax, settings.yMin, centerYCells);
-					double normalizedX2 = TransformCoordinates(x - directionX*r, settings.xMax, settings.xMin, centerXCells);
-					double normalizedY2 = TransformCoordinates(y - directionY*r, settings.yMax, settings.yMin, centerYCells);
+					double normalizedR = TransformCoordinates(
+						r, 
+						settings.rMax, 
+						settings.rMin, 
+						rCells);
+					double normalizedX1 = TransformCoordinates(
+						x + directionX*r, 
+						settings.xMax, 
+						settings.xMin, 
+						centerXCells);
+					double normalizedY1 = TransformCoordinates(
+						y + directionY*r, 
+						settings.yMax, 
+						settings.yMin, 
+						centerYCells);
+					double normalizedX2 = TransformCoordinates(
+						x - directionX*r, 
+						settings.xMax, 
+						settings.xMin, 
+						centerXCells);
+					double normalizedY2 = TransformCoordinates(
+						y - directionY*r, 
+						settings.yMax, 
+						settings.yMin, 
+						centerYCells);
 
-					
 					int xBucket1 = int(normalizedX1 + 0.5) - 1;
 					int yBucket1 = int(normalizedY1 + 0.5) - 1;
 					int xBucket2 = int(normalizedX2 + 0.5) - 1;
@@ -288,28 +312,108 @@ bool PointBelongsToEllipse(const Point& point,const EllipseDescriptor& ellipse)
 		sqr((point.x - ellipse.x)*cos(ellipse.fi) + (point.y - ellipse.y) * sin(ellipse.fi))
 		/ sqr(ellipse.a) +
 		sqr((point.x - ellipse.x)*sin(ellipse.fi) - (point.y - ellipse.y)*cos(ellipse.fi))
-		/ sqr(ellipse.b) - 1) < 0.5;
+		/ sqr(ellipse.b) - 1) < 1;
 }
 
 bool HasAnyEdge(const Matrix2D& edges, int x, int y, int edgeStep)
 {
 	int counter =0;
-	for (int dy = 0; dy < edgeStep; dy++)
+	for (int dy = -edgeStep/2; dy < edgeStep/2+1; dy++)
 	{
-		for (int dx = 0; dx < edgeStep; dx++)
+		for (int dx = -edgeStep/2; dx < edgeStep/2+1; dx++)
 		{
 			if (edges.GetIntensity(x + dx, y + dy, BorderMode::zero) > 1 - epsilon)
 			{
-				counter++;
+				return true;
 			}
 		}
 	}
-	return counter > edgeStep;
+	return false;
 	//return false;
 }
 
+bool IsLocalMaximum(
+	const boost::multi_array<float, 5>& ellipseParameterSpace,
+	int x,
+	int y,
+	int a,
+	int b,
+	int fi,
+	int xBuckets,
+	int yBuckets,
+	int aBuckets,
+	int bBuckets,
+	int fiBuckets,
+	int windowHalfSize = 2
+	)
+{
+	auto currentWeight = ellipseParameterSpace[x][y][a][b][fi];
 
-vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(
+	for (int dx = -windowHalfSize; dx <= windowHalfSize; dx++)
+	{
+		for (int dy = -windowHalfSize; dy <= windowHalfSize; dy++)
+		{
+			for (int da = -windowHalfSize; da <= windowHalfSize; da++)
+			{
+				for (int db = -windowHalfSize; db <= windowHalfSize; db++)
+				{
+					for (int dfi = -windowHalfSize; dfi <= windowHalfSize; dfi++)
+					{
+						if (dx == 0 && dy == 0 && da == 0 && db ==0 && dfi ==0 
+							|| dx + x<0
+							|| dx + x>xBuckets - 1
+							|| dy + y<0
+							|| dy + y>yBuckets - 1
+							|| da + a<0
+							|| da + a>aBuckets - 1
+							|| db + b<0
+							|| db + b>bBuckets - 1
+							)
+						{
+							continue;
+						}
+						if (currentWeight < ellipseParameterSpace
+							[x + dx]
+							[y + dy]
+							[a + da]
+							[b+db]
+							[(fi+dfi+fiBuckets)%fiBuckets])
+						{
+							return false;
+						}
+					}
+				}
+			}
+		}
+	}
+	return true;
+}
+
+double CalculateSupportRatio(const Matrix2D& edges, EllipseDescriptor ellipse)
+{
+	int supported = 0;
+	int notSupported = 0;
+	for (int y = ellipse.y-ellipse.a; y < ellipse.y+ellipse.a+1; y++)
+	{
+		for (int x = ellipse.x-ellipse.a; x < ellipse.x+ellipse.a+1; x++)
+		{
+			if (PointBelongsToEllipse(Point(x, y), ellipse)) 
+			{
+				if (HasAnyEdge(edges, x, y, 4)) 
+				{
+					supported++;
+				}
+				else
+				{
+					notSupported++;
+				}
+			}
+		}
+	}
+	return 1.*supported / (supported+notSupported);
+}
+
+vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipses(
 	const Matrix2D & edges, 
 	const Matrix2D & magnitude, 
 	const Matrix2D & directions,
@@ -329,24 +433,6 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(
 			}
 		}
 	}
-
-	//for (int y = 0; y < height; y += settings.downscaleStep)
-	//{
-	//	for (int x = 0; x < width; x += settings.downscaleStep)
-	//	{
-	//		if (HasAnyEdge(edges, x, y, settings.downscaleStep))
-	//		{
-	//			edgesPoints.push_back(Point(x / settings.downscaleStep, y / settings.downscaleStep));
-	//		}
-	//	}
-	//}
-	//Matrix2D downscaledImage(width / settings.downscaleStep, height / settings.downscaleStep);
-	//for (int i = 0; i < edgesPoints.size(); i++)
-	//{
-	//	auto point = edgesPoints.at(i);
-	//	downscaledImage.SetElementAt(point.x, point.y, 1);
-	//	PlatformImageUtils::SaveImage(Image(downscaledImage), "C:\\downscaledEllipse.png");
-	//}
 
 	int xCells = (settings.xMax - settings.xMin) / settings.centerStep + 1;
 	int yCells = (settings.yMax - settings.yMin) / settings.centerStep + 1;
@@ -373,6 +459,14 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(
 			double y0 = (y1 + y2) / 2.;
 
 			double slope = atan2(y2 - y1, x2 - x1);
+			double point1Slope = atan2(sin(directions.At(x1, y1)), cos(directions.At(x1, y1)));
+			if (abs(fmod(slope + M_PI, M_PI) - fmod(point1Slope + M_PI, M_PI)) > M_PI / 18)
+				continue;
+
+			double point2Slope = atan2(sin(directions.At(x2, y2)), cos(directions.At(x2, y2)));
+			if (abs(fmod(slope + M_PI, M_PI) - fmod(point2Slope + M_PI, M_PI)) > M_PI / 18) 
+				continue;
+			
 			for (int p3Index = 0; p3Index < edgesPoints.size(); p3Index++)
 			{
 				double x3 = edgesPoints[p3Index].x;
@@ -389,18 +483,62 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(
 					double b = sqrt(sqr(a)*sqr(d)*(1 - sqr(cosTau)) / (sqr(a) - sqr(d)*sqr(cosTau)));
 					if (b < a && b < settings.rMax && b>settings.rMin)
 					{
-						double normalizedX = TransformCoordinates(x0, settings.xMax, settings.xMin, xCells);
-						double normalizedY = TransformCoordinates(y0, settings.yMax, settings.yMin, yCells);
-						double normalizedA = TransformCoordinates(a, settings.rMax, settings.rMin, aCells);
-						double normalizedB = TransformCoordinates(b, settings.rMax, settings.rMin, bCells);;
+						double normalizedX = TransformCoordinates(x0, settings.xMin, settings.centerStep);
+						double normalizedY = TransformCoordinates(y0, settings.yMin, settings.centerStep);
+						double normalizedA = TransformCoordinates(a, settings.rMin, settings.rStep);
+						double normalizedB = TransformCoordinates(b, settings.rMin, settings.rStep);;
 						double normalizedFi = TransformCoordinates(slope, settings.fiMax, settings.fiMin, fiCells);;;
-						ellipseParametersSpace
-							[normalizedX]
-						[normalizedY]
-						[normalizedA]
-						[normalizedB]
-						[normalizedFi] += 0.03125;
-						//bAccumulator[p1Index][p2Index][int((b-rMin)/rStep)]++;
+
+						int xBucket = int(normalizedX + 0.5) - 1;
+						int yBucket = int(normalizedY + 0.5) - 1;
+						int aBucket = int(normalizedA + 0.5) - 1;
+						int bBucket = int(normalizedB + 0.5) - 1;
+						int fiBucket = int(normalizedFi + 0.5) - 1;
+						for (int dx = 0;dx < 2;dx++)
+						{
+							int currentX = xBucket + dx;
+							if (currentX < 0) continue;
+							double xCenter = currentX + 0.5;
+							double wx = abs(normalizedX - xCenter);
+							for (int dy = 0;dy < 2;dy++)
+							{
+								int currentY = yBucket + dy;
+								if (currentY < 0) continue;
+								double yCenter = currentY + 0.5;
+								double wy = abs(normalizedY - yCenter);
+								for (int da = 0;da < 2;da++)
+								{
+									int currentA = aBucket + da;
+									if (currentA < 0) continue;
+									double aCenter = currentA + 0.5;
+									double wa = abs(normalizedA - aCenter);
+									for (int db = 0;db < 2;db++)
+									{
+										int currentB = bBucket + db;
+										if (currentB < 0) continue;
+										double bCenter = currentB + 0.5;
+										double wb = abs(normalizedB - bCenter);
+										for (int dfi = 0;dfi < 2;dfi++)
+										{
+											int currentFi = fiBucket + dfi;
+											double fiCenter = currentFi + 0.5;
+											currentFi = (currentFi + fiCells) % fiCells;
+											double wfi = abs(normalizedFi - fiCenter);
+											assert(wx < 1.01);
+											assert(wy < 1.01);
+											assert(wa < 1.01);
+											assert(wfi < 1.01);
+											ellipseParametersSpace
+												[currentX]
+											[currentY]
+											[currentA]
+											[currentB]
+											[currentFi] += wx*wy*wa*wb*wfi;
+										}
+									}
+								}
+							}
+						}
 					}
 				}
 			}
@@ -420,16 +558,34 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(
 					for (int fi = 0;fi < fiCells;fi++)
 					{
 						auto& weight = ellipseParametersSpace[x0][y0][a][b][fi];
-						double transformedA = TransformCoordinatesBack(a, settings.rMin, settings.rStep);
-						if (weight/transformedA > settings.threshold)
+						
+						if (weight / (hypot(a, b)+epsilon) > settings.threshold &&
+							IsLocalMaximum(
+								ellipseParametersSpace,
+								x0,
+								y0,
+								a,
+								b,
+								fi,
+								xCells,
+								yCells,
+								aCells,
+								bCells,
+								fiCells)
+							)
+							
 						{
-							DebugHelper::WriteToDebugOutput(weight);
+							
 							double transformedX0 = TransformCoordinatesBack(x0, settings.xMin, settings.centerStep);
 							double transformedY0 = TransformCoordinatesBack(y0, settings.yMin, settings.centerStep);
-							
+							double transformedA = TransformCoordinatesBack(a, settings.rMin, settings.rStep);
 							double transformedB = TransformCoordinatesBack(b, settings.rMin, settings.rStep);
 							double transformedFi = TransformCoordinatesBack(fi, settings.fiMin, settings.fiStep);
-							result.push_back(EllipseDescriptor(transformedX0, transformedY0, transformedA, transformedB, transformedFi));
+							auto& ellipse = EllipseDescriptor(transformedX0, transformedY0, transformedA, transformedB, transformedFi);
+							if (CalculateSupportRatio(edges, ellipse) > 0.4)
+							{
+								result.push_back(ellipse);
+							}
 						}
 					}
 				}
@@ -448,73 +604,6 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(
 
 
 
-vector<vector<Point>> HoughFeatureExtractor::FindEllipses(const Matrix2D & edges, const Matrix2D & magnitude, const Matrix2D & directions)
-{
-	int width = magnitude.Width();
-	int height = magnitude.Height();
-	int roMax = hypot(width,height);
-	int maxAngle = 180;
-	int angleStep = 1;
-	int rMax = 200;
-	
-	vector<vector<Point>> result;
-	//fi,ro
-	boost::multi_array<vector<Point>, 5> ellipseParametersSpace(boost::extents[maxAngle][width][height][rMax][rMax]);
-	for (int slope = 0;slope < 180;slope++)
-	{
-		double slopeRad = slope / 180. * M_PI;
-		for (int x0 = 0; x0 < width; x0++)
-		{
-			for (int y0 = 0; y0 < height; y0++)
-			{
-				for (int a = 0; a < rMax; a++)
-				{
-					for (int b = 0; b < a; b++)
-					{
-						for (int y = 0; y < edges.Height(); y++)
-						{
-							for (int x = 0; x < edges.Width(); x++)
-							{
-								if (edges.At(x, y) > 0) 
-								{
-									if (abs(
-										sqr((x - x0)*cos(slopeRad) + (y - y0) * sin(slopeRad)) / sqr(a) +
-										sqr((x - x0)*sin(slope) - (y - y0)*cos(slope)) / sqr(b) - 1) < epsilon)
-									{
-										ellipseParametersSpace[slope][x0][y0][a][b].push_back(Point(x,y));
-									}
-								}
-							}
-						}
-
-					}
-				}
-			}
-		}
-	}
-	for (int slope = 0;slope < 180;slope++)
-	{
-		double slopeRad = slope / 180. * M_PI;
-		for (int x0 = 0; x0 < width; x0++)
-		{
-			for (int y0 = 0; y0 < height; y0++)
-			{
-				for (int a = 0; a < rMax; a++)
-				{
-					for (int b = 0; b < a; b++)
-					{
-						auto& points = ellipseParametersSpace[slope][x0][y0][a][b];
-						if (points.size() > 5)
-						{							
-							result.push_back(points);
-						}
-					}
-				}
-			}
-		}
-	}
-	return result;
-}
 
 TransformationMetaInfo RecalcuteRelativeCoordinates(TransformationMetaInfo& metaInfo,Size objectSize) 
 {

@@ -142,9 +142,9 @@ void MainWindow::FindEllipses()
 	}
 	auto edges = ImageFramework::ApplyCannyOperator(direction, magnitude);
 	//auto& points = HoughFeatureExtractor::FindLines(*edges, magnitude, direction);
-	double threshold = 30;
-	auto settings = EllipseSpaceSettings(threshold,2*M_PI,0,2*M_PI/36,200,10,4,width,0,height,0,10,4);
-	auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction, settings);
+	double threshold = 60;
+	auto settings = EllipseSpaceSettings(threshold,2*M_PI,0,2*M_PI/72,100,2,4,width,0,height,0,5,4);
+	auto& points = HoughFeatureExtractor::FindEllipses(*edges, magnitude, direction, settings);
 	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
 	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
 	//PlatformImageUtils::DrawEllipses(imageWithLines, points);
