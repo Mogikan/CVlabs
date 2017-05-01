@@ -77,7 +77,7 @@ void MainWindow::FindCircles()
 	int height = image->Height();
 	auto edges = ImageFramework::ApplyCannyOperator(direction, magnitude);
 	//auto& points = HoughFeatureExtractor::FindLines(*edges, magnitude, direction);
-	CircleSpaceSettings settings(min(width,height), 2, 5, 5);
+	CircleSpaceSettings settings(min(width,height)/2,3, 3, 3,-width*2,width*2,-height*2,height*2);
 	auto& circles = HoughFeatureExtractor::FindCircles(*edges, magnitude, direction,settings);
 	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
 	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
