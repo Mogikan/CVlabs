@@ -70,4 +70,6 @@ public:
 		const Matrix2D& magnitude,
 		double lowerThreshold = 0.07,
 		double upperThreshold = 0.25);
+
+	static unique_ptr<Matrix2D> DownScaleImageTwiceBicubic(const Matrix2D& image);	
 };

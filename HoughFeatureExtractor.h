@@ -9,6 +9,7 @@
 #include "DescriptorDimentionSettings.h"
 #include "LineSpaceSettings.h"
 #include "CircleSpaceSettings.h"
+#include "EllipseSpaceSettings.h"
 class HoughFeatureExtractor
 {
 public:
@@ -28,10 +29,7 @@ public:
 		const Matrix2D & edges,
 		const Matrix2D & magnitude,
 		const Matrix2D & directions,
-		int rMin = 5,
-		int rMax = 150,
-		double rStep = 1,
-		int edgeStep =4
+		const EllipseSpaceSettings& settings
 		);
 
 	static vector<vector<Point>> FindEllipses(

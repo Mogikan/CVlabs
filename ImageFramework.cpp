@@ -293,4 +293,26 @@ unique_ptr<Matrix2D> ImageFramework::ApplyCannyOperator(const Matrix2D & directi
 	return make_unique<Matrix2D>(edges);
 }
 
+unique_ptr<Matrix2D> ImageFramework::DownScaleImageTwiceBicubic(const Matrix2D & image)
+{
+
+	int width = image.Width();
+	int height = image.Height();
+	unique_ptr<Matrix2D> result = make_unique<Matrix2D>(width / 2, height / 2);
+	for (int y = 0; y < height / 2; y++)
+	{
+		for (int x = 0; x < width / 2; x++)
+		{
+			result->SetElementAt(x, y,
+				(image.At(x * 2, y * 2) +
+					image.At(x * 2 + 1, y * 2) +
+					image.At(x * 2, y * 2 + 1) +
+					image.At(x * 2 + 1, y * 2 + 1)) / 4
+			);
+		}
+	}
+	return move(result);
+
+}
+
 

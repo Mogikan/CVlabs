@@ -116,6 +116,8 @@ void MainWindow::ShowImage(QImage image)
 void MainWindow::FindEllipses() 
 {
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
+	image = ImageFramework::DownscaleImageTwice(*image);
+	image = ImageFramework::DownscaleImageTwice(*image);
 	//int octaveCount = log2(min(image->Height(), image->Width()));
 	//
 	//auto pyramid = make_unique<GaussPyramid>(*image, octaveCount);
@@ -126,6 +128,8 @@ void MainWindow::FindEllipses()
 	auto sobelY = ImageFramework::ApplySobelY(*smoothedImage);
 	auto magnitude = Matrix2D(image->Width(), image->Height());
 	auto direction = Matrix2D(image->Width(), image->Height());
+	int height = image->Height();
+	int width = image->Width();
 	for (int y = 0; y < image->Height(); y++)
 	{
 		for (int x = 0; x < image->Width(); x++)
@@ -138,7 +142,9 @@ void MainWindow::FindEllipses()
 	}
 	auto edges = ImageFramework::ApplyCannyOperator(direction, magnitude);
 	//auto& points = HoughFeatureExtractor::FindLines(*edges, magnitude, direction);
-	auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction, 2, 150, 1, 8);
+	double threshold = 30;
+	auto settings = EllipseSpaceSettings(threshold,2*M_PI,0,2*M_PI/36,200,10,4,width,0,height,0,10,4);
+	auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction, settings);
 	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
 	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
 	//PlatformImageUtils::DrawEllipses(imageWithLines, points);
@@ -148,42 +154,44 @@ void MainWindow::FindEllipses()
 
 void MainWindow::on_pushButton_4_clicked()
 {//value match
-	//FindEllipses();
-	auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
-	auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
-	DescriptorService service;
-	auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
-	
-	int octaveCount1 = log2(min(image1->Height(), image1->Width())) - 1;
-	GaussPyramid pyramid1(*image1, octaveCount1);
-	auto& blobs1 = pyramid1.FindBlobs();	
-	auto& descriptors1 = service.BuildGradientDirectionDescriptors(*image1, pyramid1,blobs1);
-	
-	int octaveCount2 = log2(min(image2->Height(), image2->Width())) - 1;
-	GaussPyramid pyramid2(*image2, octaveCount2);
-	auto& blobs2 = pyramid2.FindBlobs();
-	auto& descriptors2 = service.BuildGradientDirectionDescriptors(*image2, pyramid2,blobs2);
-	const vector<pair<Descriptor, Descriptor>>& matches = service.FindMatches(descriptors1, descriptors2);
-	Size image1Size(image1->Width(), image1->Height());
-	Size image2Size(image2->Width(), image2->Height());
-	DescriptorDimentionSettings houghDimensionSettings(
-		image2->Width()*2, 
-		-image2->Width()*2, 
-		20, 
-		image2->Height()*2, 
-		-image2->Height()*2, 
-		20, 
-		1 / 8.,
-		octaveCount2*2);
-
-	TransformationMetaInfo metaInfo;
-	vector<int> inliers;
-	tie(metaInfo,inliers)=HoughFeatureExtractor::FindObjectPose(image1Size, matches, houghDimensionSettings);
-	auto affineTransform = TransformationHelper::CalculateAffineTransform(matches, inliers);
-	auto& objectPicture = qImage2.copy();
-	PlatformImageUtils::DrawObjectBounds(objectPicture, image1Size, affineTransform);	
-	PlatformImageUtils::DrawObjectBounds(objectPicture,image1Size, metaInfo);
-	ShowImage(objectPicture);
+	FindEllipses();
+	//start lab 9
+	//auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
+	//auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();
+	//DescriptorService service;
+	//auto detector = ImageFramework::CreatePOIDetector(POISearchMethod::Harris);
+	//
+	//int octaveCount1 = log2(min(image1->Height(), image1->Width())) - 1;
+	//GaussPyramid pyramid1(*image1, octaveCount1);
+	//auto& blobs1 = pyramid1.FindBlobs();	
+	//auto& descriptors1 = service.BuildGradientDirectionDescriptors(*image1, pyramid1,blobs1);
+	//
+	//int octaveCount2 = log2(min(image2->Height(), image2->Width())) - 1;
+	//GaussPyramid pyramid2(*image2, octaveCount2);
+	//auto& blobs2 = pyramid2.FindBlobs();
+	//auto& descriptors2 = service.BuildGradientDirectionDescriptors(*image2, pyramid2,blobs2);
+	//const vector<pair<Descriptor, Descriptor>>& matches = service.FindMatches(descriptors1, descriptors2);
+	//Size image1Size(image1->Width(), image1->Height());
+	//Size image2Size(image2->Width(), image2->Height());
+	//DescriptorDimentionSettings houghDimensionSettings(
+	//	image2->Width()*2, 
+	//	-image2->Width()*2, 
+	//	20, 
+	//	image2->Height()*2, 
+	//	-image2->Height()*2, 
+	//	20, 
+	//	1 / 8.,
+	//	octaveCount2*2);
+	//
+	//TransformationMetaInfo metaInfo;
+	//vector<int> inliers;
+	//tie(metaInfo,inliers)=HoughFeatureExtractor::FindObjectPose(image1Size, matches, houghDimensionSettings);
+	//auto affineTransform = TransformationHelper::CalculateAffineTransform(matches, inliers);
+	//auto& objectPicture = qImage2.copy();
+	//PlatformImageUtils::DrawObjectBounds(objectPicture, image1Size, affineTransform);	
+	//PlatformImageUtils::DrawObjectBounds(objectPicture,image1Size, metaInfo);
+	//ShowImage(objectPicture);
+	//end
 	//auto& homography = HomographyHelper::FindBestHomography();
 //	ShowImage(PlatformImageUtils::CombineImages(qImage,qImage2,homography));
 

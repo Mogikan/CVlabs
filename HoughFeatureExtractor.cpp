@@ -50,6 +50,11 @@ double TransformCoordinates(double x, double max, double min, double totalBucket
 	return (x - min) / step;
 }
 
+double TransformCoordinatesBack(double x,double min, double step)
+{
+	return x * step + min;
+}
+
 double epsilon = 0.01;
 vector<vector<Point>> HoughFeatureExtractor::FindLines(
 	const Matrix2D & edges,
@@ -286,73 +291,88 @@ bool PointBelongsToEllipse(const Point& point,const EllipseDescriptor& ellipse)
 		/ sqr(ellipse.b) - 1) < 0.5;
 }
 
-bool HasAnyEdge(const Matrix2D& edges,int x, int y,int edgeStep) 
+bool HasAnyEdge(const Matrix2D& edges, int x, int y, int edgeStep)
 {
+	int counter =0;
 	for (int dy = 0; dy < edgeStep; dy++)
 	{
 		for (int dx = 0; dx < edgeStep; dx++)
 		{
-			if (edges.GetIntensity(x + dx, y + dy,BorderMode::zero) > 1 - epsilon)
+			if (edges.GetIntensity(x + dx, y + dy, BorderMode::zero) > 1 - epsilon)
 			{
-				return true;
+				counter++;
 			}
 		}
 	}
-	return false;
+	return counter > edgeStep;
+	//return false;
 }
+
 
 vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(
 	const Matrix2D & edges, 
 	const Matrix2D & magnitude, 
-	const Matrix2D & directions, 
-	int rMin, 
-	int rMax,
-	double rStep,
-	int edgeStep)
+	const Matrix2D & directions,
+	const EllipseSpaceSettings& settings)
 {
 	int height = edges.Height();
 	int width = edges.Width();
 	vector<EllipseDescriptor> result;	
 	vector<Point> edgesPoints;
-	for (int y = 0; y < height; y+=edgeStep)
+	for (int y = 0; y < height; y++)
 	{
-		for (int x = 0; x < width; x+=edgeStep)
+		for (int x = 0; x < width; x++)
 		{
-			if (HasAnyEdge(edges,x,y,edgeStep))
+			if (edges.At(x,y) > epsilon)
 			{
-				edgesPoints.push_back(Point(x/edgeStep, y/edgeStep));
+				edgesPoints.push_back(Point(x, y));
 			}
 		}
 	}
-	Matrix2D downscaledImage(width / edgeStep, height / edgeStep);
+
+	//for (int y = 0; y < height; y += settings.downscaleStep)
+	//{
+	//	for (int x = 0; x < width; x += settings.downscaleStep)
+	//	{
+	//		if (HasAnyEdge(edges, x, y, settings.downscaleStep))
+	//		{
+	//			edgesPoints.push_back(Point(x / settings.downscaleStep, y / settings.downscaleStep));
+	//		}
+	//	}
+	//}
+	//Matrix2D downscaledImage(width / settings.downscaleStep, height / settings.downscaleStep);
 	//for (int i = 0; i < edgesPoints.size(); i++)
 	//{
 	//	auto point = edgesPoints.at(i);
 	//	downscaledImage.SetElementAt(point.x, point.y, 1);
 	//	PlatformImageUtils::SaveImage(Image(downscaledImage), "C:\\downscaledEllipse.png");
 	//}
-	rMin = rMin / edgeStep;
-	rMax = rMax / edgeStep;
-	boost::multi_array<int, 3> bAccumulator(boost::extents[edgesPoints.size()][edgesPoints.size()][(rMax - rMin) / rStep + 1]);
+
+	int xCells = (settings.xMax - settings.xMin) / settings.centerStep + 1;
+	int yCells = (settings.yMax - settings.yMin) / settings.centerStep + 1;
+	int aCells = (settings.rMax - settings.rMin) / settings.rStep + 1;
+	int bCells = (settings.rMax - settings.rMin) / settings.rStep + 1;
+	int fiCells = (settings.fiMax - settings.fiMin) / settings.fiStep;
+	boost::multi_array<float, 5> ellipseParametersSpace(boost::extents[xCells][yCells][aCells][bCells][fiCells]);
 	//vector<int> bAccumulator((rMax - rMin) / rStep);
 
 	for (int p1Index = 0; p1Index < edgesPoints.size(); p1Index++)
 	{
 		double x1 = edgesPoints[p1Index].x;
 		double y1 = edgesPoints[p1Index].y;
-		for (int p2Index = p1Index+1; p2Index < edgesPoints.size(); p2Index++)
+		for (int p2Index = p1Index + 1; p2Index < edgesPoints.size(); p2Index++)
 		{
 			double x2 = edgesPoints[p2Index].x;
 			double y2 = edgesPoints[p2Index].y;
-			double a = hypot(x2-x1, y2-y1) / 2;
-			if (!(a > rMin && a < rMax))
+			double a = hypot(x2 - x1, y2 - y1) / 2;
+			if (!(a > settings.rMin && a < settings.rMax))
 			{
 				continue;
 			}
 			double x0 = (x1 + x2) / 2.;
 			double y0 = (y1 + y2) / 2.;
-			
-			double slope = atan2(y2-y1, x2-x1);
+
+			double slope = atan2(y2 - y1, x2 - x1);
 			for (int p3Index = 0; p3Index < edgesPoints.size(); p3Index++)
 			{
 				double x3 = edgesPoints[p3Index].x;
@@ -362,53 +382,66 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipsesFast(
 					continue;
 				}
 				double d = hypot(x3 - x0, y3 - y0);
-				double f = hypot(x3 - x2, y3 - y2);
-				double cosTau = ((x3 - x0)*(x2 - x1) + (y3 - y0)*(y2 - y1)) / (2 * a*d);
-				if (d < a && d>rMin)
-				{
-					double b = sqrt(sqr(a)*sqr(d)*(1-sqr(cosTau)) / (sqr(a) - sqr(d)*sqr(cosTau)));
-					if (b<a && b < rMax && b>rMin)
-					{
-						bAccumulator[p1Index][p2Index][int((b-rMin)/rStep)]++;
-					}
-				}
-			}
-
-			double max = DBL_MIN;
-			int maxIndex = -1;
-			for (int i = 0; i < (rMax-rMin)/rStep; i++)
-			{
-				if (bAccumulator[p1Index][p2Index][i] > max)
-				{
-					maxIndex = i;
-					max = bAccumulator[p1Index][p2Index][i];
-				}
-			}
-			//DebugHelper::WriteToDebugOutput(max);
-			if (maxIndex>0 && bAccumulator[p1Index][p2Index][maxIndex] > 2000/a)
-			{
-				//auto bCandidates = bAccumulator[maxIndex];
-				double b = maxIndex*rStep+rMin+rStep/2.;//accumulate(bCandidates.begin(), bCandidates.end(), 0.) / bCandidates.size();
-				auto foundEllipse = EllipseDescriptor(x0*edgeStep, y0*edgeStep, a*edgeStep, b*edgeStep, slope);
-				result.push_back(foundEllipse);
 				
-				/*for (int i = 0; i < edgesPoints.size(); i++)
+				if (d < a && d>settings.rMin)
 				{
-					if (PointBelongsToEllipse(edgesPoints.at(i), foundEllipse))
+					double cosTau = ((x3 - x0)*(x2 - x1) + (y3 - y0)*(y2 - y1)) / (2 * a*d);
+					double b = sqrt(sqr(a)*sqr(d)*(1 - sqr(cosTau)) / (sqr(a) - sqr(d)*sqr(cosTau)));
+					if (b < a && b < settings.rMax && b>settings.rMin)
 					{
-						edgesPoints.erase(edgesPoints.begin() + i);
-						i--;
+						double normalizedX = TransformCoordinates(x0, settings.xMax, settings.xMin, xCells);
+						double normalizedY = TransformCoordinates(y0, settings.yMax, settings.yMin, yCells);
+						double normalizedA = TransformCoordinates(a, settings.rMax, settings.rMin, aCells);
+						double normalizedB = TransformCoordinates(b, settings.rMax, settings.rMin, bCells);;
+						double normalizedFi = TransformCoordinates(slope, settings.fiMax, settings.fiMin, fiCells);;;
+						ellipseParametersSpace
+							[normalizedX]
+						[normalizedY]
+						[normalizedA]
+						[normalizedB]
+						[normalizedFi] += 0.03125;
+						//bAccumulator[p1Index][p2Index][int((b-rMin)/rStep)]++;
 					}
-				}*/
+				}
 			}
-			//for(auto& accumulator : bAccumulator)
-			//{
-			//	accumulator = 0;
-			//}
 		}
-
-
 	}
+
+	
+		
+	for (int x0 = 0; x0 < xCells; x0++)
+	{
+		for (int y0 = 0; y0 < yCells; y0++)
+		{
+			for (int a = 0; a < aCells; a++)
+			{
+				for (int b = 0; b < bCells; b++)
+				{
+					for (int fi = 0;fi < fiCells;fi++)
+					{
+						auto& weight = ellipseParametersSpace[x0][y0][a][b][fi];
+						double transformedA = TransformCoordinatesBack(a, settings.rMin, settings.rStep);
+						if (weight/transformedA > settings.threshold)
+						{
+							DebugHelper::WriteToDebugOutput(weight);
+							double transformedX0 = TransformCoordinatesBack(x0, settings.xMin, settings.centerStep);
+							double transformedY0 = TransformCoordinatesBack(y0, settings.yMin, settings.centerStep);
+							
+							double transformedB = TransformCoordinatesBack(b, settings.rMin, settings.rStep);
+							double transformedFi = TransformCoordinatesBack(fi, settings.fiMin, settings.fiStep);
+							result.push_back(EllipseDescriptor(transformedX0, transformedY0, transformedA, transformedB, transformedFi));
+						}
+					}
+				}
+			}
+		}
+	}
+			
+
+		
+
+
+	
 	return result;
 
 }
