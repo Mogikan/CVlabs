@@ -558,8 +558,9 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipses(
 					for (int fi = 0;fi < fiCells;fi++)
 					{
 						auto& weight = ellipseParametersSpace[x0][y0][a][b][fi];
-						
-						if (weight / (hypot(a, b)+epsilon) > settings.threshold &&
+						double transformedA = TransformCoordinatesBack(a, settings.rMin, settings.rStep);
+
+						if (weight / sqrt(transformedA) > settings.threshold &&
 							IsLocalMaximum(
 								ellipseParametersSpace,
 								x0,
@@ -578,7 +579,6 @@ vector<EllipseDescriptor> HoughFeatureExtractor::FindEllipses(
 							
 							double transformedX0 = TransformCoordinatesBack(x0, settings.xMin, settings.centerStep);
 							double transformedY0 = TransformCoordinatesBack(y0, settings.yMin, settings.centerStep);
-							double transformedA = TransformCoordinatesBack(a, settings.rMin, settings.rStep);
 							double transformedB = TransformCoordinatesBack(b, settings.rMin, settings.rStep);
 							double transformedFi = TransformCoordinatesBack(fi, settings.fiMin, settings.fiStep);
 							auto& ellipse = EllipseDescriptor(transformedX0, transformedY0, transformedA, transformedB, transformedFi);
