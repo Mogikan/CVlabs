@@ -280,7 +280,7 @@ void PlatformImageUtils::DrawCircles(QImage & image, vector<CircleDescriptor> ci
 		QPen pen(color);
 		pen.setWidth(3);
 		painter.setPen(pen);
-		painter.drawEllipse(circle.x-circle.r/2, circle.y-circle.r/2, circle.r, circle.r);		
+		painter.drawEllipse(circle.x-circle.r, circle.y-circle.r, circle.r*2, circle.r*2);		
 	}
 }
 

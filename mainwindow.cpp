@@ -73,9 +73,12 @@ void MainWindow::FindCircles()
 			direction.SetElementAt(x, y, atan2(dy, dx));//-PI to PI
 		}
 	}
+	int width = image->Width();
+	int height = image->Height();
 	auto edges = ImageFramework::ApplyCannyOperator(direction, magnitude);
 	//auto& points = HoughFeatureExtractor::FindLines(*edges, magnitude, direction);
-	auto& circles = HoughFeatureExtractor::FindCircles(*edges, magnitude, direction);
+	CircleSpaceSettings settings(min(width,height), 2, 5, 5);
+	auto& circles = HoughFeatureExtractor::FindCircles(*edges, magnitude, direction,settings);
 	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
 	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
 	//PlatformImageUtils::DrawEllipses(imageWithLines, points);
@@ -85,16 +88,16 @@ void MainWindow::FindCircles()
 
 void MainWindow::on_pushButton_3_clicked()
 {
-	//FindCircles();
-    QFileDialog imagePicker(this);
-    imagePicker.setFileMode(QFileDialog::ExistingFile);
-    imagePicker.setNameFilter(tr("Images (*.png *.jpg)"));
-    if (imagePicker.exec())
-    {
-        auto fileName = imagePicker.selectedFiles()[0];
-        qImage2 = PlatformImageUtils::LoadQImageFromFile(fileName);
-		ShowImage(qImage2);
-    }
+	FindCircles();
+    //QFileDialog imagePicker(this);
+    //imagePicker.setFileMode(QFileDialog::ExistingFile);
+    //imagePicker.setNameFilter(tr("Images (*.png *.jpg)"));
+    //if (imagePicker.exec())
+    //{
+    //    auto fileName = imagePicker.selectedFiles()[0];
+    //    qImage2 = PlatformImageUtils::LoadQImageFromFile(fileName);
+	//	ShowImage(qImage2);
+    //}
 }
 
 void MainWindow::ShowImage(QImage image)

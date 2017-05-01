@@ -2,6 +2,7 @@
 #include "boost/multi_array.hpp"
 #include "MathHelper.h"
 #include "DebugHelper.h"
+
 HoughFeatureExtractor::HoughFeatureExtractor()
 {
 }
@@ -136,21 +137,17 @@ vector<CircleDescriptor> HoughFeatureExtractor::FindCircles(
 	const Matrix2D & edges, 
 	const Matrix2D & magnitude, 
 	const Matrix2D & directions,
-	int rMin, 
-	int rMax,
-	int rStep,
-	int centerStep)
+	const CircleSpaceSettings & settings)
 {
 	int width = edges.Width();
 	int height = edges.Height();
 	double angle;
 	double dx;
 	double dy;
-	if (rMax > width / 2.)
-	{
-		rMax = width / 2. - 1;
-	}
-	boost::multi_array<int, 3> circleParametersSpace(boost::extents[width/centerStep+1][height/centerStep+1][(rMax - rMin)/rStep+1]);
+	int centerXCells = width / settings.centerStep + 1;
+	int centerYCells = height / settings.centerStep + 1;
+	int rCells = (settings.rMax - settings.rMin) / settings.rStep + 1;
+	boost::multi_array<int, 3> circleParametersSpace(boost::extents[centerXCells][centerYCells][rCells]);
 	for (int y = 0; y < height; y++)
 	{
 		for (int x = 0; x < width; x++)
@@ -160,36 +157,39 @@ vector<CircleDescriptor> HoughFeatureExtractor::FindCircles(
 				angle = directions.At(x, y);
 				dx = cos(angle);
 				dy = sin(angle);
-				for (int r = 0; r < (rMax-rMin)/rStep; r++)
+				for (int r = 0; r < rCells; r++)
 				{
-					int shiftedR = r+rMin;
+					int shiftedR = r*settings.rStep + settings.rMin;
 					int centerx = x + dx*shiftedR;
 					int centery = y + dy*shiftedR;
 					int centerx2 = x - dx*shiftedR;
 					int centery2 = y - dy*shiftedR;
+
+
+
 					if (centerx > 0 && centerx < width &&centery>0&&centery<height)
 					{
-						circleParametersSpace[centerx / centerStep][centery / centerStep][r]++;
+						circleParametersSpace[centerx / settings.centerStep][centery / settings.centerStep][r]++;
 					}
 					if (centerx2 > 0 && centerx2 < width && centery2>0 && centery2<height)
 					{
-						circleParametersSpace[centerx2 / centerStep][centery2 / centerStep][r]++;							
+						circleParametersSpace[centerx2 / settings.centerStep][centery2 / settings.centerStep][r]++;
 					}
 				}
 			}
 		}
 	}
 	vector<CircleDescriptor> result;
-	for (int y = 0; y < height/centerStep; y++)
+	for (int y = 0; y < centerYCells; y++)
 	{
-		for (int x = 0; x < width/centerStep; x++)
+		for (int x = 0; x < centerXCells; x++)
 		{
-			for (int r = 0; r < (rMax-rMin)/rStep; r++)
+			for (int r = 0; r < rCells; r++)
 			{				
 				if (circleParametersSpace[x][y][r]>50)
 				{
-					double transformedR = r*rStep + rMin;
-					result.push_back(CircleDescriptor((x+0.5)*centerStep,(y+0.5)*centerStep,transformedR));
+					double transformedR = r*settings.rStep + settings.rMin;
+					result.push_back(CircleDescriptor((x+0.5)*settings.centerStep,(y+0.5)*settings.centerStep,transformedR));
 				}
 			}
 		}
