@@ -312,6 +312,93 @@ bool IsLocalMaximum(
 }
 
 
+void Vote(
+	boost::multi_array<float, 3>& circleParametersSpace,
+	double normalizedR,
+	double normalizedX1,
+	double normalizedY1,
+	double normalizedX2,
+	double normalizedY2,
+	int xBucket1,
+	int yBucket1,
+	int xBucket2,
+	int yBucket2,
+	int rBucket,
+	int rCells
+) 
+{
+	for (int dy = 0;dy < 2;dy++)
+	{
+		int currentY1 = yBucket1 + dy;
+		double yCenter1 = currentY1 + 0.5;
+		double wy1 = abs(normalizedY1 - yCenter1);
+
+		int currentY2 = yBucket2 + dy;
+		double yCenter2 = currentY2 + 0.5;
+		double wy2 = abs(normalizedY2 - yCenter2);
+
+		for (int dx = 0;dx < 2;dx++)
+		{
+			int currentX1 = xBucket1 + dx;
+			double xCenter1 = currentX1 + 0.5;
+			double wx1 = abs(normalizedX1 - xCenter1);
+
+			int currentX2 = xBucket2 + dx;
+			double xCenter2 = currentX2 + 0.5;
+			double wx2 = abs(normalizedX2 - xCenter2);
+
+			for (int dr = 0;dr < 2;dr++)
+			{
+				int currentR = rBucket + dr;
+				if (currentR < 0 || currentR>rCells - 1)
+				{
+					continue;
+				}
+				double rCenter = currentR + 0.5;
+				double wr = abs(normalizedR - rCenter);
+				assert(wx1 < 1.01);
+				assert(wx2 < 1.01);
+				assert(wy1 < 1.01);
+				assert(wy2 < 1.01);
+				assert(wr < 1.01);
+
+				circleParametersSpace[currentY1][currentX1][currentR] += wx1*wy1*wr;
+				circleParametersSpace[currentY2][currentX2][currentR] += wx2*wy2*wr;
+			}
+		}
+	}
+}
+
+vector<CircleDescriptor> ChooseBestCandidates(
+	boost::multi_array<float, 3>& circleParametersSpace,
+	int centerXCells,
+	int centerYCells,
+	int rCells,
+	const CircleSpaceSettings& settings
+)
+{
+	vector<CircleDescriptor> result;
+	for (int y = 0; y < centerYCells; y++)
+	{
+		for (int x = 0; x < centerXCells; x++)
+		{
+			for (int r = 0; r < rCells; r++)
+			{
+				double weight = circleParametersSpace[y][x][r];
+				if (weight / log2(r + 2)>14 && IsLocalMaximum(circleParametersSpace, x, y, r, centerXCells, centerYCells, rCells))
+				{
+					double transformedR = r*settings.rStep + settings.rMin;
+					double transformedX = (x + 0.5)*settings.centerStep + settings.xMin;
+					double transformedY = (y + 0.5)*settings.centerStep + settings.yMin;
+					result.push_back(CircleDescriptor(transformedX, transformedY, transformedR));
+				}
+			}
+		}
+	}
+	return result;
+
+}
+
 vector<CircleDescriptor> HoughFeatureExtractor::FindCircles(
 	const Matrix2D & edges, 
 	const Matrix2D & magnitude, 
@@ -369,69 +456,29 @@ vector<CircleDescriptor> HoughFeatureExtractor::FindCircles(
 					int xBucket2 = int(normalizedX2 + 0.5) - 1;
 					int yBucket2 = int(normalizedY2 + 0.5) - 1;
 					int rBucket = int(normalizedR + 0.5) - 1;
-					for (int dy = 0;dy < 2;dy++)
-					{
-						int currentY1 = yBucket1 + dy;
-						double yCenter1 = currentY1 + 0.5;
-						double wy1 = abs(normalizedY1 - yCenter1);
-
-						int currentY2 = yBucket2 + dy;
-						double yCenter2 = currentY2 + 0.5;
-						double wy2 = abs(normalizedY2 - yCenter2);
-
-						for (int dx = 0;dx < 2;dx++)
-						{
-							int currentX1 = xBucket1 + dx;
-							double xCenter1 = currentX1 + 0.5;
-							double wx1 = abs(normalizedX1 - xCenter1);
-
-							int currentX2 = xBucket2 + dx;
-							double xCenter2 = currentX2 + 0.5;
-							double wx2 = abs(normalizedX2 - xCenter2);
-							
-							for (int dr = 0;dr < 2;dr++) 
-							{
-								int currentR = rBucket + dr;
-								if (currentR < 0 || currentR>rCells - 1)
-								{
-									continue;
-								}
-								double rCenter = currentR + 0.5;
-								double wr = abs(normalizedR - rCenter);
-								assert(wx1 < 1.01);
-								assert(wx2 < 1.01);
-								assert(wy1 < 1.01);
-								assert(wy2 < 1.01);
-								assert(wr < 1.01);
-
-								circleParametersSpace[currentY1][currentX1][currentR] += wx1*wy1*wr;
-								circleParametersSpace[currentY2][currentX2][currentR] += wx2*wy2*wr;
-							}
-						}
-					}
+					Vote(
+						circleParametersSpace,
+						normalizedR,
+						normalizedX1,
+						normalizedY1,
+						normalizedX2,
+						normalizedY2,
+						xBucket1,
+						yBucket1,
+						xBucket2,
+						yBucket2,
+						rBucket,
+						rCells);
 				}
 			}
 		}
-	}
-	vector<CircleDescriptor> result;
-	for (int y = 0; y < centerYCells; y++)
-	{
-		for (int x = 0; x < centerXCells; x++)
-		{
-			for (int r = 0; r < rCells; r++)
-			{		
-				double weight = circleParametersSpace[y][x][r];
-				if (weight/log2(r+2)>14 && IsLocalMaximum(circleParametersSpace,x,y,r,centerXCells,centerYCells,rCells))
-				{
-					double transformedR = r*settings.rStep + settings.rMin;
-					double transformedX = (x + 0.5)*settings.centerStep + settings.xMin;
-					double transformedY = (y + 0.5)*settings.centerStep + settings.yMin;
-					result.push_back(CircleDescriptor(transformedX, transformedY,transformedR));
-				}
-			}
-		}
-	}
-	return result;
+	}	
+	return ChooseBestCandidates(
+		circleParametersSpace,
+		centerXCells,
+		centerYCells,
+		rCells,
+		settings);
 }
 
 bool PointBelongsToEllipse(const Point& point,const EllipseDescriptor& ellipse) 
