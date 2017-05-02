@@ -145,6 +145,67 @@ bool PointsEquals(const Point& left, const Point& right)
 	return abs(left.x - right.x) < DBL_EPSILON && abs(left.y - right.y) < DBL_EPSILON;
 }
 
+vector<Point> CalculateProjection(
+	const pair<vector<Point>, LineDescriptor>& lineInfo,
+	Size imageSize
+)
+{
+	LineDescriptor lineDescriptor;
+	vector<Point> linePoints;
+	linePoints = lineInfo.first;
+	lineDescriptor = lineInfo.second;
+	double a = lineDescriptor.ro * cos(lineDescriptor.fi);
+	double b = lineDescriptor.ro * sin(lineDescriptor.fi);
+	vector<Point> projectedPoints;
+	for (int i = 0; i < linePoints.size(); i++)
+	{
+		Point& p = linePoints[i];
+		double halfWidth = imageSize.w / 2;
+		double halfHeight = imageSize.h / 2;
+		double px = p.x;// -halfWidth;
+		double py = p.y;// -halfHeight;
+		double factor = (a*px + b*py) / (sqr(a) + sqr(b));
+		double projectedX = factor*a;
+		double projectedY = factor*b;
+		double dx = projectedX - a;
+		double dy = projectedY - b;
+		double lineX = px - dx;
+		double lineY = py - dy;
+		//double projectedX = dx==0?0:-dy*(projectedY - y0) / dx + x0;
+
+		projectedPoints.push_back(Point(lineX + halfWidth, lineY + halfHeight));
+	}
+	return projectedPoints;
+}
+
+void AddLineSegments(
+	const vector<Point>& projectedPoints,
+	vector<pair<Point,Point>>& targetPoints,
+	double threshold
+	) 
+{
+	Point left = projectedPoints[0];
+	Point previous = projectedPoints[1];
+	for (int i = 1; i < projectedPoints.size(); i++)
+	{
+		Point right = projectedPoints[i];
+		if (hypot(previous.x - right.x, previous.y - right.y)>threshold
+			)
+		{
+			if (!(PointsEquals(left, previous)))
+			{
+				targetPoints.push_back({ left,previous });
+			}
+			left = right;
+		}
+		previous = right;
+	}
+	if (!(PointsEquals(left, previous)))
+	{
+		targetPoints.push_back({ left,previous });
+	}
+}
+
 vector<pair<Point, Point>> HoughFeatureExtractor::FindLineSegments(
 	const vector<pair<vector<Point>, LineDescriptor>>& linesInfo,
 	//const Matrix2D & edges,
@@ -156,36 +217,11 @@ vector<pair<Point, Point>> HoughFeatureExtractor::FindLineSegments(
 	
 	vector<pair<Point, Point>> result;
 	for (int i = 0; i < linesInfo.size(); i++)
-	{
-		LineDescriptor lineDescriptor;
-		vector<Point> linePoints;
+	{		
 		auto& lineInfo = linesInfo[i];
-		linePoints = lineInfo.first;
-		lineDescriptor = lineInfo.second;
-		if (linePoints.size() < 2) continue;
-		double a = lineDescriptor.ro * cos(lineDescriptor.fi);
-		double b = lineDescriptor.ro * sin(lineDescriptor.fi);
-		
-		vector<Point> projectedPoints;
-		for (int i = 0; i < linePoints.size(); i++)
-		{
-			Point& p = linePoints[i];	
-			double halfWidth = imageSize.w / 2;
-			double halfHeight = imageSize.h / 2;
-			double px = p.x;// -halfWidth;
-			double py = p.y;// -halfHeight;
-			double factor = (a*px + b*py) / (sqr(a) + sqr(b));
-			double projectedX = factor*a;
-			double projectedY = factor*b;
-			double dx = projectedX - a;
-			double dy = projectedY - b;
-			double lineX = px - dx;
-			double lineY = py - dy;
-			//double projectedX = dx==0?0:-dy*(projectedY - y0) / dx + x0;
-			
-			projectedPoints.push_back(Point(lineX + halfWidth, lineY + halfHeight));
-		}
-		if (abs(cos(lineDescriptor.fi))>1-epsilon)
+		if (lineInfo.first.size() < 2) continue;
+		auto& projectedPoints = CalculateProjection(lineInfo,imageSize);
+		if (abs(cos(lineInfo.second.fi))>1-epsilon)
 		{
 			sort(projectedPoints.begin(), projectedPoints.end(), [](Point p1, Point p2)->int
 			{
@@ -198,47 +234,8 @@ vector<pair<Point, Point>> HoughFeatureExtractor::FindLineSegments(
 			{
 				return p1.y>p2.y;
 			});
-		}
-		//double minX;
-		//double maxX;
-		//double minY;
-		//double maxY;
-		//auto& minMax = minmax_element(linePoints.begin(), linePoints.end(), [](Point p1,Point p2)->int {return p1.x>p2.x; });
-		//minX = minMax.first[0].x;
-		//maxX = minMax.second[0].x;
-		//minMax = minmax_element(linePoints.begin(), linePoints.end(), [](Point p1,Point p2)->int {return p1.y>p2.y; });
-		//minY = minMax.first[0].y;
-		//maxY = minMax.second[0].y;
-		//double maxLength = hypot(maxX - minX, maxY - minY);
-		
-		Point& left = projectedPoints[0];
-		Point& right = projectedPoints[1];
-		Point& previous = right;
-		for (int i = 1; i < projectedPoints.size(); i++)
-		{
-			Point& right = projectedPoints[i];			
-			if (hypot(previous.x - right.x, previous.y - right.y)>threshold				
-				)
-			{
-				if (!(PointsEquals(left, previous)))
-				{					
-					result.push_back({ left,previous });
-				}
-				left = right;
-			}
-			else 
-			{
-				int a = 5;
-				assert(a == 5);
-			}
-			previous = right;
-		}
-		if (!(PointsEquals(left, previous))) 
-		{
-			result.push_back({ left,previous });
-		}
-			
-
+		}	
+		AddLineSegments(projectedPoints,result,threshold);
 	}
 	return result;
 }
