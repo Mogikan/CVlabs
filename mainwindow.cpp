@@ -218,11 +218,6 @@ void MainWindow::on_pushButton_4_clicked()
 void MainWindow::on_pushButton_5_clicked()
 {
 	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
-	//int octaveCount = log2(min(image->Height(), image->Width()));
-	//
-	//auto pyramid = make_unique<GaussPyramid>(*image, octaveCount);
-	//auto& blobs = pyramid->FindBlobs();
-	//ShowImage(PlatformImageUtils::DrawImage(*image, blobs));
 	auto smoothedImage = ImageFramework::ApplyGaussSmooth(*image, 1.4);
 	auto sobelX = ImageFramework::ApplySobelX(*smoothedImage);
 	auto sobelY = ImageFramework::ApplySobelY(*smoothedImage);
@@ -272,4 +267,47 @@ void MainWindow::on_pushButton_5_clicked()
 	//ShowImage(PlatformImageUtils::DrawImage(*image1, *image2, matches, image1->Width()));
 
 
+}
+
+void MainWindow::on_pushButton_2_clicked()
+{
+	auto image = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
+	auto smoothedImage = ImageFramework::ApplyGaussSmooth(*image, 1.4);
+	auto sobelX = ImageFramework::ApplySobelX(*smoothedImage);
+	auto sobelY = ImageFramework::ApplySobelY(*smoothedImage);
+	auto magnitude = Matrix2D(image->Width(), image->Height());
+	auto direction = Matrix2D(image->Width(), image->Height());
+	for (int y = 0; y < image->Height(); y++)
+	{
+		for (int x = 0; x < image->Width(); x++)
+		{
+			double dx = sobelX->At(x, y);
+			double dy = sobelY->At(x, y);
+			magnitude.SetElementAt(x, y, hypot(dx, dy));
+			direction.SetElementAt(x, y, atan2(dy, dx));//-PI to PI
+		}
+	}
+	auto edges = ImageFramework::ApplyCannyOperator(direction, magnitude);
+	int roMax = hypot(magnitude.Width(), magnitude.Height());
+	int roMin = -roMax;
+	double threshold = 10;
+	LineSpaceSettings settings(roMax, roMin, 2, 2 * M_PI / 144, threshold);
+	auto& lineDesriptors = HoughFeatureExtractor::FindLines(*edges, magnitude, direction, settings);
+	double lineThreshold = 30;
+
+	auto& lines = HoughFeatureExtractor::FindLineSegments(lineDesriptors, Size(image->Width(), image->Height()), lineThreshold);
+	auto imageWithPrimitives = qImage.copy();
+	PlatformImageUtils::DrawLines(imageWithPrimitives, lines);
+
+
+
+	int width = image->Width();
+	int height = image->Height();
+	CircleSpaceSettings circleSettings(min(width, height) / 2, 3, 3, 3, -width * 2, width * 2, -height * 2, height * 2);
+	auto& circles = HoughFeatureExtractor::FindCircles(*edges, magnitude, direction, circleSettings);
+	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
+	//PlatformImageUtils::DrawEllipses(imageWithLines, points);
+	PlatformImageUtils::DrawCircles(imageWithPrimitives, circles);
+
+	ShowImage(imageWithPrimitives);
 }
