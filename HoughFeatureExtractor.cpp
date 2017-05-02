@@ -60,6 +60,59 @@ double TransformCoordinatesBack(double x,double min, double step)
 	return (x+0.5) * step + min;
 }
 
+void Vote(
+	boost::multi_array<pair<double, vector<Point>>, 2>& lineParametersSpace,
+	int roBucket,
+	int fiBucket,
+	double roNormalized,
+	double angleNormalized,
+	int angleCells,
+	int centeredX,
+	int centeredY
+) 
+{
+	for (int dRo = 0;dRo < 2;dRo++)
+	{
+		int currentRo = roBucket + dRo;
+		double roCenter = currentRo + 0.5;
+		double wRo = abs(roNormalized - roCenter);
+		for (int dFi = 0; dFi < 2; dFi++)
+		{
+			int currentFi = (fiBucket + dFi + angleCells) % angleCells;
+			double fiCenter = fiBucket + dFi + 0.5;
+			double wFi = abs(angleNormalized - fiCenter);
+			assert(wRo < 1.001 && wFi < 1.001);
+			lineParametersSpace[currentRo][currentFi].first += wRo*wFi;
+			lineParametersSpace[currentRo][currentFi].second.push_back(Point(centeredX, centeredY));
+		}
+	}
+}
+
+vector<pair<vector<Point>, LineDescriptor>> ChooseBestCandidates(
+	boost::multi_array<pair<double, vector<Point>>, 2>& lineParametersSpace,
+	int roCells,
+	int angleCells, 
+	const LineSpaceSettings& settings
+)
+{
+	vector<pair<vector<Point>, LineDescriptor>> result;
+	for (int ro = 0; ro < roCells; ro++)
+	{
+		for (int fi = 0; fi < angleCells; fi++)
+		{
+			auto accumulatedLines = lineParametersSpace[ro][fi];
+			if (accumulatedLines.first > settings.threshold &&
+				IsLocalMaximum(lineParametersSpace, ro, fi, roCells, angleCells))
+			{
+				double transformedRo = TransformCoordinatesBack(ro, settings.roMin, settings.roStep);
+				double transformedFi = (fi + 1)*settings.angleStep;
+				result.push_back({ accumulatedLines.second , LineDescriptor(transformedRo,transformedFi) });
+			}
+		}
+	}
+	return result;
+}
+
 double epsilon = 0.01;
 vector<pair<vector<Point>, LineDescriptor>> HoughFeatureExtractor::FindLines(
 	const Matrix2D & edges,
@@ -101,41 +154,19 @@ vector<pair<vector<Point>, LineDescriptor>> HoughFeatureExtractor::FindLines(
 						settings.roMin,
 						settings.roStep);
 				int roBucket = int(roNormalized + 0.5) - 1;
-				for (int dRo = 0;dRo < 2;dRo++)
-				{
-					int currentRo = roBucket + dRo;
-					double roCenter = currentRo + 0.5;
-					double wRo = abs(roNormalized - roCenter);
-					for (int dFi = 0; dFi < 2; dFi++)
-					{
-						int currentFi = (fiBucket + dFi + angleCells) % angleCells;
-						double fiCenter = fiBucket + dFi + 0.5;
-						double wFi = abs(angleNormalized - fiCenter);
-						assert(wRo < 1.001 && wFi < 1.001);
-						lineParametersSpace[currentRo][currentFi].first += wRo*wFi;
-						lineParametersSpace[currentRo][currentFi].second.push_back(Point(centeredX, centeredY));
-					}
-				}
+				Vote(
+					lineParametersSpace,
+					roBucket,
+					fiBucket,
+					roNormalized,
+					angleNormalized,
+					angleCells,
+					centeredX,
+					centeredY);
 			}
 		}
 	}
-	vector<pair<vector<Point>, LineDescriptor>> result;
-	for (int ro = 0; ro < roCells; ro++)
-	{
-		for (int fi = 0; fi < angleCells; fi++)
-		{
-			auto accumulatedLines = lineParametersSpace[ro][fi];			
-			if (accumulatedLines.first > settings.threshold && 
-				IsLocalMaximum(lineParametersSpace,ro,fi,roCells,angleCells))
-			{
-				double transformedRo = TransformCoordinatesBack(ro, settings.roMin, settings.roStep);
-				double transformedFi = (fi+1)*settings.angleStep;
-				result.push_back({accumulatedLines.second , LineDescriptor(transformedRo,transformedFi)});
-			}
-		}
-
-	}
-	return result;
+	return ChooseBestCandidates(lineParametersSpace,roCells,angleCells,settings);	
 }
 
 
