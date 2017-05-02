@@ -241,13 +241,14 @@ void MainWindow::on_pushButton_5_clicked()
 	auto edges = ImageFramework::ApplyCannyOperator(direction, magnitude);
 	int roMax = hypot(magnitude.Width(), magnitude.Height());
 	int roMin = -roMax;
-	LineSpaceSettings settings(roMax, roMin,5,2*M_PI/60);
-	auto& points = HoughFeatureExtractor::FindLines(*edges, magnitude, direction,settings);
-	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
-	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
+	double threshold = 10;
+	LineSpaceSettings settings(roMax, roMin, 2, 2 * M_PI / 144,threshold);
+	auto& lineDesriptors = HoughFeatureExtractor::FindLines(*edges, magnitude, direction,settings);
+	double lineThreshold = 30;
+	
+	auto& lines = HoughFeatureExtractor::FindLineSegments(lineDesriptors,Size(image->Width(),image->Height()), lineThreshold);
 	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
-	//PlatformImageUtils::DrawEllipses(imageWithLines, points);
-	PlatformImageUtils::DrawLines(imageWithLines, points);
+	PlatformImageUtils::DrawLines(imageWithLines, lines);
 	ShowImage(imageWithLines);
 	//gradient match
 	//auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();

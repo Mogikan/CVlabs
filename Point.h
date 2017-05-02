@@ -10,6 +10,6 @@ struct Point
 		this->y = y;
 	}
 	int x;
-	int y;
+	int y;	
 };
 

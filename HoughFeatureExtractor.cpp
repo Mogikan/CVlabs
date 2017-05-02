@@ -61,7 +61,7 @@ double TransformCoordinatesBack(double x,double min, double step)
 }
 
 double epsilon = 0.01;
-vector<vector<Point>> HoughFeatureExtractor::FindLines(
+vector<pair<vector<Point>, LineDescriptor>> HoughFeatureExtractor::FindLines(
 	const Matrix2D & edges,
 	const Matrix2D & magnitude,
 	const Matrix2D & directions,
@@ -85,28 +85,21 @@ vector<vector<Point>> HoughFeatureExtractor::FindLines(
 		{
 			if (edges.At(x, y) > epsilon)
 			{
-				int centeredX = -(x - width / 2.);
-				int centeredY = -(y - height / 2.);
+				int centeredX = x - width / 2.;
+				int centeredY = y - height / 2.;
 				double angle = directions.At(x, y);
 				
 				double teta = atan2(centeredY, centeredX) - angle;
-				double ro = hypot(centeredX, centeredY)*cos(teta);
-				double dx = cos(angle);
-				double dy = sin(angle);
-				double crossX = (sqr(dx)*centeredX + dy*centeredY*dx) / (sqr(dx)+sqr(dy));
-				double crossY = crossX * dy / dx;
-				double ro2 = hypot(crossX,crossY);
-				angle = atan2(crossY, crossX);
+				double ro = centeredX * cos(angle) + centeredY * sin(angle);
+				double ro2 = hypot(centeredX, centeredY)*cos(teta);
 				double anglePositive = fmod(angle + 2*M_PI, 2*M_PI);
 				double angleNormalized = anglePositive / settings.angleStep;
-				int fiBucket = int(angleNormalized + 0.5) - 1;
-				//assert(abs(ro - ro2) < 0.1);
+				int fiBucket = int(angleNormalized + 0.5) - 1;				
 				double roNormalized =
 					TransformCoordinates(
-						ro, 						 
-						settings.roMax,
+						ro, 						 						
 						settings.roMin,
-						roCells);
+						settings.roStep);
 				int roBucket = int(roNormalized + 0.5) - 1;
 				for (int dRo = 0;dRo < 2;dRo++)
 				{
@@ -120,24 +113,131 @@ vector<vector<Point>> HoughFeatureExtractor::FindLines(
 						double wFi = abs(angleNormalized - fiCenter);
 						assert(wRo < 1.001 && wFi < 1.001);
 						lineParametersSpace[currentRo][currentFi].first += wRo*wFi;
-						lineParametersSpace[currentRo][currentFi].second.push_back(Point(x, y));
+						lineParametersSpace[currentRo][currentFi].second.push_back(Point(centeredX, centeredY));
 					}
 				}
 			}
 		}
 	}
-	vector<vector<Point>> result;
+	vector<pair<vector<Point>, LineDescriptor>> result;
 	for (int ro = 0; ro < roCells; ro++)
 	{
 		for (int fi = 0; fi < angleCells; fi++)
 		{
-			auto accumulatedLines = lineParametersSpace[ro][fi];
-			if (accumulatedLines.first > 30 && 
+			auto accumulatedLines = lineParametersSpace[ro][fi];			
+			if (accumulatedLines.first > settings.threshold && 
 				IsLocalMaximum(lineParametersSpace,ro,fi,roCells,angleCells))
 			{
-				result.push_back(accumulatedLines.second);
+				double transformedRo = TransformCoordinatesBack(ro, settings.roMin, settings.roStep);
+				double transformedFi = (fi+1)*settings.angleStep;
+				result.push_back({accumulatedLines.second , LineDescriptor(transformedRo,transformedFi)});
 			}
 		}
+
+	}
+	return result;
+}
+
+
+
+bool PointsEquals(const Point& left, const Point& right)
+{
+	return abs(left.x - right.x) < DBL_EPSILON && abs(left.y - right.y) < DBL_EPSILON;
+}
+
+vector<pair<Point, Point>> HoughFeatureExtractor::FindLineSegments(
+	const vector<pair<vector<Point>, LineDescriptor>>& linesInfo,
+	//const Matrix2D & edges,
+	//LineSpaceSettings settings,
+	Size imageSize,
+	double threshold
+)
+{
+	
+	vector<pair<Point, Point>> result;
+	for (int i = 0; i < linesInfo.size(); i++)
+	{
+		LineDescriptor lineDescriptor;
+		vector<Point> linePoints;
+		auto& lineInfo = linesInfo[i];
+		linePoints = lineInfo.first;
+		lineDescriptor = lineInfo.second;
+		if (linePoints.size() < 2) continue;
+		double a = lineDescriptor.ro * cos(lineDescriptor.fi);
+		double b = lineDescriptor.ro * sin(lineDescriptor.fi);
+		
+		vector<Point> projectedPoints;
+		for (int i = 0; i < linePoints.size(); i++)
+		{
+			Point& p = linePoints[i];	
+			double halfWidth = imageSize.w / 2;
+			double halfHeight = imageSize.h / 2;
+			double px = p.x;// -halfWidth;
+			double py = p.y;// -halfHeight;
+			double factor = (a*px + b*py) / (sqr(a) + sqr(b));
+			double projectedX = factor*a;
+			double projectedY = factor*b;
+			double dx = projectedX - a;
+			double dy = projectedY - b;
+			double lineX = px - dx;
+			double lineY = py - dy;
+			//double projectedX = dx==0?0:-dy*(projectedY - y0) / dx + x0;
+			
+			projectedPoints.push_back(Point(lineX + halfWidth, lineY + halfHeight));
+		}
+		if (abs(cos(lineDescriptor.fi))>1-epsilon)
+		{
+			sort(projectedPoints.begin(), projectedPoints.end(), [](Point p1, Point p2)->int
+			{
+				return p1.x>p2.x;
+			});
+		}
+		else 
+		{
+			sort(projectedPoints.begin(), projectedPoints.end(), [](Point p1, Point p2)->int
+			{
+				return p1.y>p2.y;
+			});
+		}
+		//double minX;
+		//double maxX;
+		//double minY;
+		//double maxY;
+		//auto& minMax = minmax_element(linePoints.begin(), linePoints.end(), [](Point p1,Point p2)->int {return p1.x>p2.x; });
+		//minX = minMax.first[0].x;
+		//maxX = minMax.second[0].x;
+		//minMax = minmax_element(linePoints.begin(), linePoints.end(), [](Point p1,Point p2)->int {return p1.y>p2.y; });
+		//minY = minMax.first[0].y;
+		//maxY = minMax.second[0].y;
+		//double maxLength = hypot(maxX - minX, maxY - minY);
+		
+		Point& left = projectedPoints[0];
+		Point& right = projectedPoints[1];
+		Point& previous = right;
+		for (int i = 1; i < projectedPoints.size(); i++)
+		{
+			Point& right = projectedPoints[i];			
+			if (hypot(previous.x - right.x, previous.y - right.y)>threshold				
+				)
+			{
+				if (!(PointsEquals(left, previous)))
+				{					
+					result.push_back({ left,previous });
+				}
+				left = right;
+			}
+			else 
+			{
+				int a = 5;
+				assert(a == 5);
+			}
+			previous = right;
+		}
+		if (!(PointsEquals(left, previous))) 
+		{
+			result.push_back({ left,previous });
+		}
+			
 
 	}
 	return result;
@@ -317,7 +417,7 @@ bool PointBelongsToEllipse(const Point& point,const EllipseDescriptor& ellipse)
 
 bool HasAnyEdge(const Matrix2D& edges, int x, int y, int edgeStep)
 {
-	int counter =0;
+	//int counter =0;
 	for (int dy = -edgeStep/2; dy < edgeStep/2+1; dy++)
 	{
 		for (int dx = -edgeStep/2; dx < edgeStep/2+1; dx++)

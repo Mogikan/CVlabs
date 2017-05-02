@@ -9,6 +9,7 @@
 #include "EllipseDescriptor.h"
 #include "CircleDescriptor.h"
 #include "Size.h"
+#include "LineDescriptor.h"
 using namespace std;
 class PlatformImageUtils
 {
@@ -30,7 +31,8 @@ public:
 	static QImage DrawImage(const Matrix2D& image, vector<BlobInfo> blobs);
 	static void DrawObjectBounds(QImage & image, Size objectSize, const Matrix2D& t);
 	static void DrawObjectBounds(QImage& image, Size objectSize, TransformationMetaInfo metaInfo);
-	static void DrawLines(QImage& image, vector<vector<Point>> points);
+	static void DrawLines(QImage& image, vector<pair<vector<Point>, LineDescriptor>> points);
+	static void DrawLines(QImage& image, vector<pair<Point, Point>> points);
 	static void DrawEllipses(QImage& image, vector<EllipseDescriptor> ellipses);
 	static void DrawCircles(QImage& image, vector<CircleDescriptor> circles);
 	static QImage CombineImages(const QImage& image1, const QImage& image2, const Matrix2D& t);

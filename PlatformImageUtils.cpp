@@ -234,22 +234,45 @@ void PlatformImageUtils::DrawObjectBounds(QImage & image, Size objectSize, const
 	painter.restore();
 }
 
-void PlatformImageUtils::DrawLines(QImage& image, vector<vector<Point>> points)
+void PlatformImageUtils::DrawLines(QImage& image, vector<pair<Point, Point>> lines)
 {
 	QPainter painter(&image);
+	for (int i = 0; i < lines.size(); i++)
+	{
+		auto& line = lines[i];
+		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
+		painter.setPen(color);
+		painter.drawLine(line.first.x, line.first.y, line.second.x, line.second.y);		
+	}
+}
+
+void PlatformImageUtils::DrawLines(QImage& image, vector<pair<vector<Point>,LineDescriptor>> points)
+{
+	QPainter painter(&image);
+	painter.save();
+	painter.translate(image.width() / 2., image.height() / 2.);
 	for (int i = 0; i < points.size(); i++)
 	{
 		auto& line = points[i];
 		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
 		painter.setPen(color);
-		
-		for (int j = 0; j < line.size()-1; j++)
+		double fi = line.second.fi;
+		double ro = line.second.ro;
+		double dx = ro*cos(fi);
+		double dy = ro*sin(fi);
+		double x1 = -image.width();
+		double y1 = -(dx / dy)*(x1 - dx) + dy;
+		double x2 = image.width();
+		double y2 = -(dx / dy)*(x2 - dx) + dy;
+		painter.drawLine(x1, y1, x2, y2);	
+		/*for (int j = 0; j < line.first.size()-1; j++)
 		{
-			auto& point1 = line[j];
-			auto& point2 = line[j + 1];
+			auto& point1 = line.first[j];
+			auto& point2 = line.first[j + 1];
 			painter.drawLine(point1.x, point1.y, point2.x, point2.y);
-		}
+		}*/
 	}
+	painter.restore();
 }
 
 void PlatformImageUtils::DrawEllipses(QImage & image, vector<EllipseDescriptor> ellipses)

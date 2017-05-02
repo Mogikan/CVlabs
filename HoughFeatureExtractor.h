@@ -10,15 +10,22 @@
 #include "LineSpaceSettings.h"
 #include "CircleSpaceSettings.h"
 #include "EllipseSpaceSettings.h"
+#include "LineDescriptor.h"
 class HoughFeatureExtractor
 {
 public:
 	HoughFeatureExtractor();
-	static vector<vector<Point>> FindLines(
+	static vector<pair<vector<Point>, LineDescriptor>> FindLines(
 		const Matrix2D & edges, 
 		const Matrix2D & magnitude, 
 		const Matrix2D & directions,
 		const LineSpaceSettings& lineSpaceSettings);
+	static vector<pair<Point, Point>> FindLineSegments(
+		const vector<pair<vector<Point>, LineDescriptor>>& linePoints,		
+		//LineSpaceSettings settings,
+		Size imageSize,
+		double threshold);
+	
 	static vector<CircleDescriptor> FindCircles(
 		const Matrix2D & edges,
 		const Matrix2D & magnitude,

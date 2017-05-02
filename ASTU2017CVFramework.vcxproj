@@ -176,6 +176,7 @@
     <ClInclude Include="CircleDescriptor.h" />
     <ClInclude Include="CircleSpaceSettings.h" />
     <ClInclude Include="EllipseSpaceSettings.h" />
+    <ClInclude Include="LineDescriptor.h" />
     <ClInclude Include="LineSpaceSettings.h" />
     <ClInclude Include="TransformationMetaInfo.h" />
     <ClInclude Include="EllipseDescriptor.h" />

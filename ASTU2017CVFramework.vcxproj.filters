@@ -205,5 +205,8 @@
     <ClInclude Include="EllipseSpaceSettings.h">
       <Filter>Generated Files</Filter>
     </ClInclude>
+    <ClInclude Include="LineDescriptor.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
