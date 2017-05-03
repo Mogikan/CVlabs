@@ -80,10 +80,10 @@ void MainWindow::FindCircles()
 	CircleSpaceSettings settings(min(width,height)/2,3, 3, 3,-width*2,width*2,-height*2,height*2);
 	auto& circles = HoughFeatureExtractor::FindCircles(*edges, magnitude, direction,settings);
 	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
-	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
+	
 	//PlatformImageUtils::DrawEllipses(imageWithLines, points);
-	PlatformImageUtils::DrawCircles(imageWithLines, circles);
-	ShowImage(imageWithLines);
+	PlatformImageUtils::DrawCircles(qImage, circles);
+	ShowImage(qImage);
 }
 
 void MainWindow::on_pushButton_3_clicked()
@@ -145,10 +145,10 @@ void MainWindow::FindEllipses()
 	double threshold = 60;
 	auto settings = EllipseSpaceSettings(threshold,2*M_PI,0,2*M_PI/72,100,2,4,width,0,height,0,5,4);
 	auto& points = HoughFeatureExtractor::FindEllipses(*edges, magnitude, direction, settings);
-	//auto& points = HoughFeatureExtractor::FindEllipsesFast(*edges, magnitude, direction);
+	
 	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
-	//PlatformImageUtils::DrawEllipses(imageWithLines, points);
 	PlatformImageUtils::DrawEllipses(imageWithLines, points);
+	
 	ShowImage(imageWithLines);
 }
 
@@ -242,9 +242,9 @@ void MainWindow::on_pushButton_5_clicked()
 	double lineThreshold = 30;
 	
 	auto& lines = HoughFeatureExtractor::FindLineSegments(lineDesriptors,Size(image->Width(),image->Height()), lineThreshold);
-	auto imageWithLines = PlatformImageUtils::QImageFromInternalImage(Image(*edges));
-	PlatformImageUtils::DrawLines(imageWithLines, lines);
-	ShowImage(imageWithLines);
+	
+	PlatformImageUtils::DrawLines(qImage, lines);
+	ShowImage(qImage);
 	//gradient match
 	//auto image1 = PlatformImageUtils::ConvertQImageToInternalImage(qImage)->GetNormalizedMatrix();
 	//auto image2 = PlatformImageUtils::ConvertQImageToInternalImage(qImage2)->GetNormalizedMatrix();

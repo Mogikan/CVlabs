@@ -105,7 +105,7 @@ vector<pair<vector<Point>, LineDescriptor>> ChooseBestCandidates(
 				IsLocalMaximum(lineParametersSpace, ro, fi, roCells, angleCells))
 			{
 				double transformedRo = TransformCoordinatesBack(ro, settings.roMin, settings.roStep);
-				double transformedFi = (fi + 1)*settings.angleStep;
+				double transformedFi = (fi + 0.5)*settings.angleStep;
 				result.push_back({ accumulatedLines.second , LineDescriptor(transformedRo,transformedFi) });
 			}
 		}

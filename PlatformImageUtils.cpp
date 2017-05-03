@@ -241,7 +241,9 @@ void PlatformImageUtils::DrawLines(QImage& image, vector<pair<Point, Point>> lin
 	{
 		auto& line = lines[i];
 		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
-		painter.setPen(color);
+		QPen pen(color);
+		pen.setWidth(3);
+		painter.setPen(pen);
 		painter.drawLine(line.first.x, line.first.y, line.second.x, line.second.y);		
 	}
 }
@@ -255,7 +257,9 @@ void PlatformImageUtils::DrawLines(QImage& image, vector<pair<vector<Point>,Line
 	{
 		auto& line = points[i];
 		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
-		painter.setPen(color);
+		QPen pen(color);
+		pen.setWidth(3);
+		painter.setPen(pen);
 		double fi = line.second.fi;
 		double ro = line.second.ro;
 		double dx = ro*cos(fi);
@@ -281,11 +285,11 @@ void PlatformImageUtils::DrawEllipses(QImage & image, vector<EllipseDescriptor> 
 	for (int i = 0; i < ellipses.size(); i++)
 	{
 		auto& ellipse = ellipses[i];
-		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);
+		auto color = QColor(abs(rand()) % 256, abs(rand()) % 256, abs(rand()) % 256);				
+		painter.save();
 		QPen pen(color);
 		pen.setWidth(3);
-		painter.setPen(pen);		
-		painter.save();
+		painter.setPen(pen);
 		painter.translate(ellipse.x, ellipse.y);
 		painter.rotate((ellipse.fi)/M_PI*180);
 		painter.drawEllipse(QPointF(0,0), ellipse.a, ellipse.b);
